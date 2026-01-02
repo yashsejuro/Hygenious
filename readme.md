@@ -1,184 +1,199 @@
-<div align="center">
+# 🧼 Hygenious
 
-# 🧠 Hygenious - AI-Powered Hygiene Audit System
+**AI-powered hygiene audit platform built for trust, accuracy, and real-world business use.**
 
-![Hygenious Logo](https://img.shields.io/badge/Hygenious-AI_Hygiene_Auditor-0D9488?style=for-the-badge)
+<p align="center">
+  <i>Turning any smartphone into a reliable, AI-driven hygiene auditor.</i>
+</p>
 
-**Turning any web browser into an instant, unbiased hygiene auditor**
-
-[![Next.js](https://img.shields.io/badge/Next.js-14-black?style=flat-square&logo=next.js)](https://nextjs.org/)
-[![TensorFlow.js](https://img.shields.io/badge/TensorFlow.js-ML-FF6F00?style=flat-square&logo=tensorflow)](https://www.tensorflow.org/js)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
-[![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
-
-**Team Sandbox** • HealthTech & Wellness Track  
-**Hack Karnataka 2025** – GDG Hubli × KLE Technological University
-
-[Demo](#-demo) • [Features](#-key-features) • [Installation](#-installation) • [Tech Stack](#-tech-stack) • [Contributing](#-contributing)
-
-</div>
+<p align="center">
+  <img src="https://img.shields.io/badge/Status-Active%20Development-brightgreen" alt="Status"/>
+  <img src="https://img.shields.io/badge/Node.js-18+-success" alt="Node.js"/>
+  <img src="https://img.shields.io/badge/License-MIT-blue" alt="License"/>
+</p>
 
 ---
 
-## 💡 About
+## 🚀 About
 
-**Hygenious** is a web-based AI hygiene audit system that analyzes cleanliness from images of kitchens, restrooms, dining areas, and storage rooms. Upload a photo and get an instant **Cleanliness Score (0–100)** with detailed issue detection and automatic **ranking** and **certification** for top-performing places.
+**Hygenious** is an AI-driven hygiene intelligence platform that analyzes real-world images of spaces such as kitchens, restrooms, and dining areas to generate objective cleanliness scores and actionable insights.
 
-### The Problem
-- Manual hygiene inspections are slow and subjective  
-- Paper checklists are unreliable  
-- Businesses need real-time, scalable hygiene monitoring  
-- Customers demand transparent verification of cleanliness  
+Originally developed during **Hack Karnataka 2025** with Team Sandbox, I'm now rebuilding this project from the ground up with full ownership of the backend, APIs, and infrastructure—designed for real business deployment.
 
-### Our Solution
-**Upload → AI Analyzes → Get Instant Score + Rank + Certificate**
+The system focuses on **consistency, explainability, and accuracy**, making it suitable for restaurants, hostels, clinics, and shared spaces—not just demos or hackathons.
 
 ---
 
-## ✨ Key Features
+## 💡 The Problem
+
+❌ Manual hygiene audits are slow, subjective, and inconsistent  
+❌ Customer reviews are unreliable and biased  
+❌ Businesses lack visual proof and audit history  
+❌ Traditional inspections are expensive and infrequent  
+
+## ✅ The Solution
+
+**Hygenious provides:**
+- Instant, data-driven hygiene audits
+- Transparent, rule-based scoring logic
+- Visual proof with detected issue markers
+- Audit history and compliance logs
+- Human-in-the-loop feedback for continuous improvement
+
+---
+
+## ✨ Core Features (MVP)
 
 | Feature | Description |
 |---------|-------------|
-| 🧼 **AI Hygiene Scan** | Detects stains, spills, litter, clutter, and PPE violations |
-| ⚡ **Cleanliness Score** | Instant 0–100 score with category breakdowns |
-| 🧾 **Issue Logs** | Automatically lists detected problems with severity levels |
-| 📊 **Dashboard** | Track scores, trends, and improvements over time |
-| 🪪 **QR Code Display** | Share verified hygiene scores publicly |
-| 🏆 **Ranking System** | Compares hygiene performance across all locations and displays leaderboard |
-| 🎖️ **Certificate Generator** | Automatically awards digital hygiene certificates for high-performing places |
-| 📈 **Analytics** | Visual insights with charts and reports |
+| 📸 **Image-based Scanning** | Upload images for instant hygiene analysis |
+| 📊 **Cleanliness Score (0-100)** | Objective scoring based on detected issues |
+| 🧾 **Issue Breakdown** | Detailed list of problems with severity levels |
+| 🗂️ **Audit History** | Track scans, trends, and improvements over time |
+| 🔁 **Feedback Loop** | Human corrections improve AI accuracy |
+| 🏆 **Ranking System** | Compare hygiene performance across locations |
+| 🎖️ **Certification** | Digital hygiene certificates for high performers |
 
 ---
 
-### Screenshots
+## 🎯 How It Works
 
-<table align="center">
-  <tr>
-    <th>Dashboard</th>
-    <th>New Audit</th>
-    <th>Results</th>
-  </tr>
-  <tr>
-    <td align="center">
-      <img src="https://i.ibb.co/dwP8jFHr/Screenshot-2025-11-09-at-1-11-10-AM.png" alt="Dashboard" width="260"/>
-    </td>
-    <td align="center">
-      <img src="https://i.ibb.co/qLkdFTPc/Screenshot-2025-11-09-at-1-11-20-AM.png" alt="Audit" width="260"/>
-    </td>
-    <td align="center">
-      <img src="https://i.ibb.co/Kj16rrtQ/Screenshot-2025-11-09-at-1-12-22-AM.png" alt="Results" width="260"/>
-    </td>
-  </tr>
-</table>
+```text
+1. Capture an image of the space
+2. AI detection pipeline identifies hygiene issues
+3. Rule-based scoring engine calculates cleanliness score
+4. Results logged with visual explanations
+5. Manager can confirm/correct AI detections
+6. Corrections improve model accuracy over time
+```
 
-🚀 **[Live Demo](https://hygenious.vercel.app)** (Coming Soon)
+---
+
+## 🧠 System Design Philosophy
+
+**AI detects facts. Logic decides impact. Humans validate results. Data improves accuracy.**
+
+This separation ensures the system remains:
+- ✅ **Defensible** - Scoring logic is transparent and adjustable
+- ✅ **Explainable** - Every score can be justified
+- ✅ **Scalable** - Modular architecture supports growth
+- ✅ **Trustworthy** - Human oversight prevents AI errors
 
 ---
 
 ## 🧮 Scoring System
+
 ```
 🟢 Excellent (85-100) → Clean, high hygiene standards
-🟡 Good (60-84)       → Acceptable with minor issues
+🟡 Good (60-84)       → Acceptable with minor issues  
 🔴 Poor (0-59)        → Requires immediate attention
 ```
 
 **Formula:**
 ```
-Final Score = 100 - (Critical Issues × 15) - (High Issues × 10) - (Medium Issues × 5) - (Low Issues × 2)
+Base Score = 100
+- Trash detected        → -20 points
+- Liquid spill detected → -25 points
+- Uncovered food        → -15 points
+- Dirty surface         → -10 points
+- Clutter              → -5 points
+
+Final Score = clamp(Base Score - Penalties, 0, 100)
 ```
+
+This rule-based approach ensures:
+- Scores are **repeatable** and **consistent**
+- Business owners can understand **why** a score was given
+- Adjustments can be made per business type
 
 ---
 
 ## 🤖 AI/ML Architecture
 
-### Models Used
+### Current Approach (MVP)
+- **Object Detection:** YOLOv8-based detection for trash, spills, clutter
+- **Confidence Filtering:** Only accepts detections above 0.6 confidence
+- **Rule-Based Scoring:** Transparent penalty system
+- **Human-in-the-Loop:** Manager corrections become training data
 
-1. **COCO-SSD** (Object Detection)
-   - Detects litter, food items, PPE equipment
-   - Real-time browser inference with TensorFlow.js
-   - Accuracy: 85-90%
+### Models Being Evaluated
+| Model | Purpose | Accuracy Target |
+|-------|---------|----------------|
+| **YOLOv8** | Object detection (trash, spills, clutter) | 85%+ |
+| **MobileNetV3** | Image classification (clean/medium/dirty) | 80%+ |
+| **Custom CNN** | Stain/spill detection | 75%+ |
 
-2. **MobileNetV2/V3** (Image Classification)
-   - Classifies: Clean / Medium / Dirty
-   - Transfer learning from ImageNet
-   - Accuracy: 83-89%
-
-3. **Vision Transformer (ViT)** (Feature Extraction)
-   - Fine-grained stain/spill detection
-   - Trained on custom dataset (2000+ images)
-   - Accuracy: 87%
-
-4. **Image Processing** (Stain Detection)
-   - OpenCV-based dark spot detection
-   - Hybrid approach with CNN validation
-   - Accuracy: 75%
-
-### Training Pipeline
-```python
-# Example: MobileNet Training
-base_model = MobileNetV3Large(weights='imagenet', include_top=False)
-base_model.trainable = False
-
-model = Sequential([
-    base_model,
-    GlobalAveragePooling2D(),
-    Dense(256, activation='relu'),
-    Dropout(0.3),
-    Dense(3, activation='softmax')  # Clean, Medium, Dirty
-])
-
-model.compile(
-    optimizer=Adam(learning_rate=0.001),
-    loss='categorical_crossentropy',
-    metrics=['accuracy']
-)
-```
-
-**Training Environment:** Google Colab (GPU: T4/V100)
+### Training Strategy
+- Start with **pretrained models** (YOLO, MobileNet)
+- Fine-tune on **real customer data** (India-specific environments)
+- Collect corrections via **feedback loop**
+- Retrain monthly with **validated labels**
 
 ---
 
 ## 🛠️ Tech Stack
 
-### Frontend
-- **Next.js 14** - React framework with App Router
-- **TypeScript** - Type-safe development
+### Backend (Current Focus)
+- **Node.js + Express** - RESTful API server
+- **MongoDB Atlas** - Scan logs and audit history
+- **Cloudinary** - Image storage and delivery
+- **JWT** - Authentication (planned)
+
+### Frontend (Next Phase)
+- **React / Next.js** - Modern UI framework
 - **Tailwind CSS** - Utility-first styling
-- **ShadCN UI** - Beautiful component library
-- **Recharts** - Data visualization
+- **ShadCN UI** - Component library
 
-### Backend & Database
-- **Node.js / Express.js** - API server
-- **MongoDB Atlas** - Document database (audit logs)
-- **Neon PostgreSQL** - Relational database (users)
-- **Clerk** - Authentication
+### AI/ML Pipeline
+- **Python + FastAPI** - Model serving
+- **TensorFlow / PyTorch** - Model training
+- **OpenCV** - Image preprocessing
+- **YOLOv8** - Object detection
 
-### AI/ML
-- **TensorFlow.js** - Browser-based ML inference
-- **Python (FastAPI)** - Model training & deployment
-- **Google Cloud Vision API** - Enhanced detection
-- **Hugging Face** - Model hosting
-
-### Storage & Deployment
-- **Cloudinary / AWS S3** - Image storage
-- **Vercel** - Web hosting
+### Deployment
+- **Render / Railway** - Backend hosting
+- **Vercel** - Frontend hosting
 - **GitHub Actions** - CI/CD
 
 ---
 
-## 🚀 Installation
+## 📁 Project Structure
+
+```
+hygenious/
+├── backend/
+│   ├── src/
+│   │   ├── routes/
+│   │   │   └── scan.js          # Scan endpoints
+│   │   ├── controllers/
+│   │   │   └── scanController.js # Business logic
+│   │   ├── models/
+│   │   │   └── Scan.js          # MongoDB schema
+│   │   └── index.js             # Server entry point
+│   ├── .env
+│   ├── package.json
+│   └── README.md
+├── frontend/                    # (Coming soon)
+├── ml-pipeline/                 # (Coming soon)
+└── README.md                    # This file
+```
+
+---
+
+## 🚀 Installation & Setup
 
 ### Prerequisites
 - Node.js 18+
-- Python 3.8+ (for ML training)
+- MongoDB Atlas account (free tier)
+- Cloudinary account (free tier)
 - Git
 
 ### Quick Start
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/yourusername/hygenious.git
-cd hygenious
+git clone https://github.com/yashsejuro/hygenious.git
+cd hygenious/backend
 ```
 
 2. **Install dependencies**
@@ -188,23 +203,17 @@ npm install
 
 3. **Set up environment variables**
 ```bash
-cp .env.example .env.local
+cp .env.example .env
 ```
 
-Edit `.env.local`:
+Edit `.env`:
 ```env
-# Database
-DATABASE_URL="postgresql://..."
-MONGODB_URI="mongodb+srv://..."
-
-# Authentication
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_..."
-CLERK_SECRET_KEY="sk_test_..."
-
-# Image Storage
-NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME="your-cloud-name"
-CLOUDINARY_API_KEY="your-api-key"
-CLOUDINARY_API_SECRET="your-api-secret"
+PORT=3000
+MONGODB_URI=mongodb+srv://...
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=your-api-key
+CLOUDINARY_API_SECRET=your-api-secret
+JWT_SECRET=your-secret-key
 ```
 
 4. **Run development server**
@@ -212,204 +221,176 @@ CLOUDINARY_API_SECRET="your-api-secret"
 npm run dev
 ```
 
-5. **Open browser**
+5. **Test the API**
+```bash
+# Health check
+curl http://localhost:3000
+
+# Test scan endpoint
+curl -X POST http://localhost:3000/api/scan \
+  -H "Content-Type: application/json" \
+  -d '{}'
+```
+
+---
+
+## 📊 API Documentation
+
+### Base URL
 ```
 http://localhost:3000
 ```
 
----
+### Endpoints
 
-## 📁 Project Structure
+#### 1. Health Check
+```http
+GET /
 ```
-hygenious/
-├── app/                      # Next.js App Router
-│   ├── dashboard/           # Dashboard pages
-│   ├── api/                 # API routes
-│   └── page.tsx             # Landing page
-├── components/              # React components
-│   ├── ui/                  # ShadCN components
-│   ├── ScoreDisplay.tsx     # Score visualization
-│   └── IssueCard.tsx        # Issue display
-├── lib/                     # Utilities
-│   ├── ai-service.ts        # AI inference logic
-│   └── db.ts                # Database connections
-├── models/                  # ML models
-│   ├── mobilenet/          # Classification model
-│   └── coco-ssd/           # Object detection
-├── public/                  # Static assets
-└── README.md
+**Response:**
+```json
+{
+  "message": "🧼 Hygenious API is running",
+  "status": "healthy",
+  "version": "1.0.0"
+}
 ```
 
----
-
-## 🧪 ML Model Training
-
-### Training on Google Colab
-
-1. **Open Colab Notebook**
-```python
-# Mount Google Drive
-from google.colab import drive
-drive.mount('/content/drive')
-
-# Install dependencies
-!pip install tensorflow transformers
+#### 2. Create Scan
+```http
+POST /api/scan
+```
+**Response:**
+```json
+{
+  "success": true,
+  "score": 78,
+  "grade": "C",
+  "issues": [
+    {
+      "type": "trash",
+      "severity": "medium",
+      "description": "Possible litter detected",
+      "confidence": 0.82
+    }
+  ],
+  "scanId": "scan_1704369600000",
+  "timestamp": "2026-01-02T10:00:00.000Z"
+}
 ```
 
-2. **Load Dataset**
-```python
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
-
-train_datagen = ImageDataGenerator(
-    rescale=1./255,
-    rotation_range=20,
-    horizontal_flip=True
-)
-
-train_generator = train_datagen.flow_from_directory(
-    'dataset/train',
-    target_size=(224, 224),
-    batch_size=32,
-    class_mode='categorical'
-)
-```
-
-3. **Train Model**
-```python
-model.fit(
-    train_generator,
-    epochs=20,
-    validation_data=val_generator
-)
-```
-
-4. **Convert to TensorFlow.js**
-```bash
-tensorflowjs_converter \
-    --input_format=keras \
-    model.h5 \
-    tfjs_model/
-```
-
-5. **Deploy to Web**
-```typescript
-import * as tf from '@tensorflow/tfjs';
-
-const model = await tf.loadLayersModel('/models/model.json');
-const prediction = model.predict(imageTensor);
+#### 3. Get Scan History
+```http
+GET /api/scans
 ```
 
 ---
 
-## 🎯 Usage
+## 📈 Project Status
 
-### 1. Create New Audit
-1. Navigate to **Dashboard → New Audit**
-2. Upload image (drag & drop or click)
-3. Select location type (Kitchen, Restroom, etc.)
-4. Click **"Analyze Image"**
-5. View results in ~10 seconds
+### ✅ Completed
+- [x] Backend API structure
+- [x] Mock hygiene scoring
+- [x] Error handling
+- [x] CORS configuration
+- [x] Health check endpoint
 
-### 2. View Dashboard
-- See total audits, average score, critical issues
-- Track score trends over time
-- Compare location performance
+### 🚧 In Progress
+- [ ] Image upload (Cloudinary integration)
+- [ ] MongoDB connection
+- [ ] Real AI detection pipeline
 
-### 3. Generate QR Code
-1. Go to **Locations**
-2. Click **"Add Location"**
-3. Enable **"Generate QR Code"**
-4. Download and display at location
-
-### 4. Public Verification
-- Customers scan QR code
-- View verified hygiene score
-- See recent audit history
+### 📋 Planned
+- [ ] Frontend UI
+- [ ] User authentication
+- [ ] Real-time dashboard
+- [ ] QR code generation
+- [ ] Certificate system
+- [ ] Deployment (Render/Vercel)
 
 ---
 
-## 📊 Performance Metrics
+## 🎯 Business Vision
 
-| Model | Accuracy | Inference Time | Model Size |
-|-------|----------|----------------|------------|
-| COCO-SSD | 85-90% | <100ms | 27MB |
-| MobileNetV3 | 83-89% | ~200ms | 16MB |
-| Vision Transformer | 87% | ~500ms | 350MB |
-| Stain Detection | 75% | ~150ms | N/A |
+Hygenious aims to become a **trusted hygiene intelligence layer** for:
+- 🍽️ **Restaurants & Cafés** - Maintain standards, build customer trust
+- 🏠 **Hostels & PGs** - Transparent cleanliness verification
+- 🏥 **Clinics & Care Facilities** - Compliance documentation
+- 🏢 **Shared Workspaces** - Regular hygiene monitoring
 
-**Overall System:**
-- Average Analysis Time: **8-12 seconds**
-- End-to-End Accuracy: **80-85%**
+### Monetization Strategy
+- **Freemium Model:** 10 free scans/month
+- **Starter Plan:** ₹499/month (50 scans)
+- **Pro Plan:** ₹2,999/month (Unlimited scans + analytics)
+- **Enterprise:** Custom pricing for chains
 
 ---
 
 ## 🤝 Contributing
 
-We welcome contributions! Here's how:
+This is currently a **personal project**, but contributions are welcome!
 
+If you'd like to contribute:
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
-
-### Development Guidelines
-- Follow TypeScript best practices
-- Write tests for new features
-- Update documentation
-- Use conventional commits
-
----
-
-## 🐛 Issues & Support
-
-Found a bug? Have questions?
-
-- 🐛 [Report Bug](https://github.com/yourusername/hygenious/issues/new?template=bug_report.md)
-- 💡 [Request Feature](https://github.com/yourusername/hygenious/issues/new?template=feature_request.md)
-- 💬 [Discussions](https://github.com/yourusername/hygenious/discussions)
 
 ---
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-## 👥 Team Sandbox
+## 👤 Author
 
-## 👥 Team Sandbox — Hygenious
+**Yash Krishna Divate**  
+Full Stack Developer & Founder
 
-| Name | Role | GitHub | Email |
-|------|------|--------|--------|
-| **Yash Krishna Divate** | Team Leader & Full Stack Developer | [@yashsejuro](https://github.com/yashsejuro) | yashsejuro.ys@gmail.com |
-| **Kundan Sahu** | Lead ML & Backend Engineer | [@Kundan730](https://github.com/Kundan730) | espkundan@gmail.com |
-| **Harsha Krishna Divate** | Frontend & ML Engineer | [@HarshaDivate](https://github.com/HarshaDivate) | harshdivate.hd@gmail.com |
-| **Harish Chabbi** | Dataset & Research | [@harishchabbi](https://github.com/harishchabbi) | chabbiharish83@gmail.com |
-
+- GitHub: [@yashsejuro](https://github.com/yashsejuro)
+- Email: yashsejuro.ys@gmail.com
+- LinkedIn: [Your LinkedIn](https://linkedin.com/in/yash-divate)
 
 ---
 
 ## 🙏 Acknowledgments
 
-- **Hack Karnataka 2025** - GDG Hubli × KLE Technological University
-- **TensorFlow.js** - For browser-based ML
-- **Hugging Face** - For model hosting
-- **Google Colab** - For free GPU training
+- **Hack Karnataka 2025** - For the initial inspiration and hackathon experience
+- **Team Sandbox** - Original hackathon team members
+- **TensorFlow.js** - Browser-based ML inference
+- **YOLOv8** - Object detection framework
+- **OpenCV** - Image processing tools
 
 ---
 
-## 🌟 Show Your Support
+## 🌟 Project Journey
 
-Give a ⭐️ if this project helped you!
+This project started as a **hackathon idea** but is being rebuilt into a **real business product**:
+
+✅ **Phase 1 (Hackathon):** Proof of concept with team  
+✅ **Phase 2 (Current):** Solo rebuild with full ownership  
+🚧 **Phase 3 (Next):** MVP with real AI + paying customers  
+📋 **Phase 4 (Goal):** Scalable SaaS platform  
 
 ---
 
-<div align="center">
+## 📞 Support
 
-**Built with ❤️ by Team Sandbox**
+If you find this project interesting:
+- ⭐ **Star this repo**
+- 🐛 **Report bugs** via Issues
+- 💡 **Suggest features** via Discussions
+- 📧 **Reach out** for collaboration
 
-**Hack Karnataka 2025 • HealthTech & Wellness Track**
+---
 
-</div>
+<p align="center">
+  Built with ❤️ by Yash Krishna Divate
+</p>
+
+<p align="center">
+  <i>Rebuilding a hackathon idea into a real business | Jan 2026</i>
+</p>
