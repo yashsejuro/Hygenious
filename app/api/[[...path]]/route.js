@@ -45,11 +45,7 @@ if (!GEMINI_API_KEY) {
 
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY || '');
 const geminiModel = genAI.getGenerativeModel({
-  model: 'gemini-2.0-flash',
-  generationConfig: {
-    // Ensure the output is JSON
-    responseMimeType: 'application/json', 
-  },
+  model: 'gemini-pro-vision', // Classic vision model for image analysis
 });
 // --- END NEW GEMINI CONFIG ---
 
