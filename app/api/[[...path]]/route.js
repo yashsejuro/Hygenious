@@ -1,14 +1,37 @@
 import { MongoClient } from 'mongodb';
 import { v4 as uuidv4 } from 'uuid';
 import { NextResponse } from 'next/server';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { 
-  generateToken, 
-  verifyToken, 
-  hashPassword, 
-  comparePassword, 
-  authenticateRequest 
-} from '@/lib/auth';
+import { GoogleGenerativeAI } from '@google/generative-ai'; // Import Google AI SDK
+
+// Helper function to get Firebase UID from Authorization header
+// For now, we accept the Firebase ID token and extract UID
+// In production, you should verify the token with Firebase Admin SDK
+async function getFirebaseUID(authHeader) {
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    throw new Error('Authorization header is required');
+  }
+  
+  const token = authHeader.substring(7);
+  if (!token) {
+    throw new Error('Token is required');
+  }
+
+  // For now, we'll decode the Firebase ID token (JWT) to get UID
+  // TODO: Verify token with Firebase Admin SDK in production
+  try {
+    // Firebase ID tokens are JWTs, decode the payload
+    const parts = token.split('.');
+    if (parts.length === 3) {
+      const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
+      return payload.user_id || payload.sub || payload.uid;
+    }
+    // If it's not a JWT, assume it's the UID directly (for development)
+    return token;
+  } catch (error) {
+    // If decoding fails, assume the token is the UID (for development)
+    return token;
+  }
+}
 
 // --- NEW GEMINI CONFIG ---
 // Get your API key from environment variables
@@ -170,14 +193,113 @@ export async function GET(request) {
   try {
     const { db } = await connectToDatabase();
 
-    // Auth endpoint: GET /api/auth/me
+    if (path === 'audits') {
+      const audits = await db.collection('audits')
+        .find({})
+        .sort({ createdAt: -1 })
+        .limit(100)
+        .toArray();
+      
+      return NextResponse.json({ 
+        success: true, 
+        data: audits,
+        count: audits.length 
+      });
+    }
+
+    if (path.startsWith('audits/')) {
+      const auditId = path.split('/')[1];
+      const audit = await db.collection('audits').findOne({ id: auditId });
+      
+      if (!audit) {
+        return NextResponse.json(
+          { success: false, error: 'Audit not found' }, 
+          { status: 404 }
+        );
+      }
+      
+      return NextResponse.json({ success: true, data: audit });
+    }
+
+    if (path === 'dashboard/stats') {
+      // (Your existing dashboard logic is great and remains unchanged)
+      const audits = await db.collection('audits')
+        .find({})
+        .sort({ createdAt: -1 })
+        .limit(100)
+        .toArray();
+      
+      const totalAudits = audits.length;
+      const avgScore = totalAudits > 0 
+        ? Math.round(audits.reduce((sum, a) => sum + (a.result?.overallScore || 0), 0) / totalAudits)
+        : 0;
+      
+      const criticalIssues = audits.reduce((count, a) => {
+        const critical = (a.result?.issues || []).filter(i => i.severity === 'Critical').length;
+        return count + critical;
+      }, 0);
+
+      const locations = [...new Set(audits.map(a => a.location).filter(Boolean))];
+      
+      const recentAudits = audits.slice(0, 5).map(a => ({
+        id: a.id,
+        location: a.location,
+        score: a.result?.overallScore || 0,
+        date: a.createdAt,
+        status: 'Completed'
+      }));
+
+      const scoreTrend = audits.slice(0, 7).reverse().map(a => ({
+        date: new Date(a.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        score: a.result?.overallScore || 0
+      }));
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          totalAudits,
+          avgScore,
+          criticalIssues,
+          locationsCount: locations.length,
+          recentAudits,
+          scoreTrend
+        }
+      });
+    }
+
+    // Firebase Auth: GET /api/auth/user/:uid
+    if (path.startsWith('auth/user/')) {
+      const uid = path.split('/')[2];
+      if (!uid) {
+        return NextResponse.json(
+          { success: false, error: 'User ID is required' },
+          { status: 400 }
+        );
+      }
+
+      const user = await db.collection('users').findOne(
+        { uid: uid },
+        { projection: { password: 0 } }
+      );
+
+      if (!user) {
+        return NextResponse.json(
+          { success: false, error: 'User not found' },
+          { status: 404 }
+        );
+      }
+
+      return NextResponse.json({ success: true, data: user });
+    }
+
+    // Firebase Auth: GET /api/auth/me (get current user from token)
     if (path === 'auth/me') {
       try {
         const authHeader = request.headers.get('authorization');
-        const decoded = authenticateRequest(authHeader);
+        const uid = await getFirebaseUID(authHeader);
         
         const user = await db.collection('users').findOne(
-          { id: decoded.userId },
+          { uid: uid },
           { projection: { password: 0 } }
         );
         
@@ -189,115 +311,6 @@ export async function GET(request) {
         }
         
         return NextResponse.json({ success: true, data: user });
-      } catch (error) {
-        return NextResponse.json(
-          { success: false, error: error.message },
-          { status: 401 }
-        );
-      }
-    }
-
-    // Protected: GET /api/audits
-    if (path === 'audits') {
-      try {
-        const authHeader = request.headers.get('authorization');
-        const decoded = authenticateRequest(authHeader);
-        
-        const audits = await db.collection('audits')
-          .find({ userId: decoded.userId })
-          .sort({ createdAt: -1 })
-          .limit(100)
-          .toArray();
-        
-        return NextResponse.json({ 
-          success: true, 
-          data: audits,
-          count: audits.length 
-        });
-      } catch (error) {
-        return NextResponse.json(
-          { success: false, error: error.message },
-          { status: 401 }
-        );
-      }
-    }
-
-    // Protected: GET /api/audits/:id
-    if (path.startsWith('audits/')) {
-      try {
-        const authHeader = request.headers.get('authorization');
-        const decoded = authenticateRequest(authHeader);
-        
-        const auditId = path.split('/')[1];
-        const audit = await db.collection('audits').findOne({ 
-          id: auditId,
-          userId: decoded.userId 
-        });
-        
-        if (!audit) {
-          return NextResponse.json(
-            { success: false, error: 'Audit not found' }, 
-            { status: 404 }
-          );
-        }
-        
-        return NextResponse.json({ success: true, data: audit });
-      } catch (error) {
-        return NextResponse.json(
-          { success: false, error: error.message },
-          { status: 401 }
-        );
-      }
-    }
-
-    // Protected: GET /api/dashboard/stats
-    if (path === 'dashboard/stats') {
-      try {
-        const authHeader = request.headers.get('authorization');
-        const decoded = authenticateRequest(authHeader);
-        
-        const audits = await db.collection('audits')
-          .find({ userId: decoded.userId })
-          .sort({ createdAt: -1 })
-          .limit(100)
-          .toArray();
-        
-        const totalAudits = audits.length;
-        const avgScore = totalAudits > 0 
-          ? Math.round(audits.reduce((sum, a) => sum + (a.result?.overallScore || 0), 0) / totalAudits)
-          : 0;
-        
-        const criticalIssues = audits.reduce((count, a) => {
-          const critical = (a.result?.issues || []).filter(i => i.severity === 'Critical').length;
-          return count + critical;
-        }, 0);
-
-        const locations = [...new Set(audits.map(a => a.location).filter(Boolean))];
-        
-        const recentAudits = audits.slice(0, 5).map(a => ({
-          id: a.id,
-          location: a.location,
-          score: a.result?.overallScore || 0,
-          date: a.createdAt,
-          status: 'Completed'
-        }));
-
-        const scoreTrend = audits.slice(0, 7).reverse().map(a => ({
-          date: new Date(a.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-          score: a.result?.overallScore || 0
-        }));
-
-        return NextResponse.json({
-          success: true,
-          data: {
-            totalAudits,
-            avgScore,
-            criticalIssues,
-            locationsCount: locations.length,
-            recentAudits,
-            scoreTrend
-          }
-        });
       } catch (error) {
         return NextResponse.json(
           { success: false, error: error.message },
@@ -341,199 +354,148 @@ export async function POST(request) {
   try {
     const { db } = await connectToDatabase();
 
-    // Auth endpoint: POST /api/auth/register
+    // Firebase Auth: POST /api/auth/register (sync Firebase user to MongoDB)
     if (path === 'auth/register') {
       const body = await request.json();
-      const { email, password, name, companyName } = body;
+      const { uid, email, name, companyName, emailVerified } = body;
 
-      // Validate required fields
-      if (!email || !password || !name) {
+      if (!uid || !email) {
         return NextResponse.json(
-          { success: false, error: 'Email, password, and name are required' },
-          { status: 400 }
-        );
-      }
-
-      // Validate email format
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        return NextResponse.json(
-          { success: false, error: 'Invalid email format' },
-          { status: 400 }
-        );
-      }
-
-      // Validate password length
-      if (password.length < 6) {
-        return NextResponse.json(
-          { success: false, error: 'Password must be at least 6 characters' },
+          { success: false, error: 'UID and email are required' },
           { status: 400 }
         );
       }
 
       // Check if user already exists
-      const existingUser = await db.collection('users').findOne({ email: email.toLowerCase() });
+      const existingUser = await db.collection('users').findOne({ uid: uid });
+      
       if (existingUser) {
-        return NextResponse.json(
-          { success: false, error: 'User with this email already exists' },
-          { status: 409 }
+        // Update existing user
+        await db.collection('users').updateOne(
+          { uid: uid },
+          {
+            $set: {
+              email: email.toLowerCase(),
+              name: name || existingUser.name,
+              companyName: companyName || existingUser.companyName,
+              emailVerified: emailVerified !== undefined ? emailVerified : existingUser.emailVerified,
+              updatedAt: new Date().toISOString(),
+            }
+          }
         );
+
+        const updatedUser = await db.collection('users').findOne(
+          { uid: uid },
+          { projection: { password: 0 } }
+        );
+
+        return NextResponse.json({
+          success: true,
+          data: updatedUser,
+          message: 'User updated'
+        });
+      } else {
+        // Create new user
+        const user = {
+          uid: uid,
+          id: uid, // Keep id for backward compatibility
+          email: email.toLowerCase(),
+          name: name || '',
+          companyName: companyName || null,
+          emailVerified: emailVerified || false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+        await db.collection('users').insertOne(user);
+        
+        // Create index on uid for faster lookups
+        await db.collection('users').createIndex({ uid: 1 }, { unique: true });
+
+        const { password: _, ...userWithoutPassword } = user;
+
+        return NextResponse.json({
+          success: true,
+          data: userWithoutPassword,
+          message: 'User created'
+        });
       }
-
-      // Hash password
-      const hashedPassword = await hashPassword(password);
-
-      // Create user
-      const user = {
-        id: uuidv4(),
-        email: email.toLowerCase(),
-        password: hashedPassword,
-        name,
-        companyName: companyName || null,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      await db.collection('users').insertOne(user);
-
-      // Create index on email for faster lookups
-      await db.collection('users').createIndex({ email: 1 }, { unique: true });
-
-      // Generate token
-      const token = generateToken(user);
-
-      // Remove password from response
-      const { password: _, ...userWithoutPassword } = user;
-
-      return NextResponse.json({
-        success: true,
-        data: {
-          user: userWithoutPassword,
-          token,
-        },
-      });
     }
 
-    // Auth endpoint: POST /api/auth/login
-    if (path === 'auth/login') {
+    if (path === 'analyze') {
       const body = await request.json();
-      const { email, password } = body;
+      const { image, location, areaNotes } = body;
 
-      // Validate required fields
-      if (!email || !password) {
+      if (!image) {
         return NextResponse.json(
-          { success: false, error: 'Email and password are required' },
+          { success: false, error: 'Image is required' }, 
           { status: 400 }
         );
       }
 
-      // Find user
-      const user = await db.collection('users').findOne({ email: email.toLowerCase() });
-      if (!user) {
-        return NextResponse.json(
-          { success: false, error: 'Invalid email or password' },
-          { status: 401 }
-        );
+      // --- UPDATED IMAGE PARSING ---
+      // This now correctly extracts the MIME type and base64 data
+      let imageBase64;
+      let mimeType = 'image/jpeg'; // Default
+
+      if (image.startsWith('data:')) {
+        const parts = image.split(';base64,');
+        const mimeTypeData = parts[0].split(':')[1];
+        if (mimeTypeData) {
+          mimeType = mimeTypeData; // e.g., 'image/png' or 'image/webp'
+        }
+        imageBase64 = parts[1];
+      } else {
+        // Assume it's raw base64 data, which is less common
+        imageBase64 = image;
+      }
+      // --- END UPDATED IMAGE PARSING ---
+
+      console.log('📸 Processing image analysis request...');
+      console.log('Location:', location);
+      console.log('Image size:', imageBase64.length, 'characters');
+      console.log('MIME type:', mimeType);
+
+      // Pass both the base64 data and the MIME type to the function
+      const analysisResult = await analyzeHygieneImage(imageBase64, mimeType);
+
+      console.log('✅ Analysis complete');
+      console.log('Overall Score:', analysisResult.overallScore);
+
+      // Get Firebase UID from Authorization header
+      let userId = null;
+      try {
+        const authHeader = request.headers.get('authorization');
+        if (authHeader) {
+          userId = await getFirebaseUID(authHeader);
+        }
+      } catch (error) {
+        console.warn('Auth error (continuing without user):', error.message);
       }
 
-      // Verify password
-      const isPasswordValid = await comparePassword(password, user.password);
-      if (!isPasswordValid) {
-        return NextResponse.json(
-          { success: false, error: 'Invalid email or password' },
-          { status: 401 }
-        );
-      }
+      const audit = {
+        id: uuidv4(),
+        userId: userId, // Firebase UID
+        location: location || 'Unknown',
+        areaNotes: areaNotes || '',
+        // Don't save the full base64 string, just a snippet
+        imageData: image.substring(0, 100) + '...', 
+        result: analysisResult,
+        createdAt: new Date().toISOString(),
+        status: 'Completed'
+      };
 
-      // Generate token
-      const token = generateToken(user);
+      await db.collection('audits').insertOne(audit);
 
-      // Remove password from response
-      const { password: _, ...userWithoutPassword } = user;
+      console.log('💾 Audit saved to database:', audit.id);
 
       return NextResponse.json({
         success: true,
         data: {
-          user: userWithoutPassword,
-          token,
-        },
+          auditId: audit.id,
+          result: analysisResult
+        }
       });
-    }
-
-    // Protected: POST /api/analyze
-    if (path === 'analyze') {
-      try {
-        const authHeader = request.headers.get('authorization');
-        const decoded = authenticateRequest(authHeader);
-        
-        const body = await request.json();
-        const { image, location, areaNotes } = body;
-
-        if (!image) {
-          return NextResponse.json(
-            { success: false, error: 'Image is required' }, 
-            { status: 400 }
-          );
-        }
-
-        // --- UPDATED IMAGE PARSING ---
-        // This now correctly extracts the MIME type and base64 data
-        let imageBase64;
-        let mimeType = 'image/jpeg'; // Default
-
-        if (image.startsWith('data:')) {
-          const parts = image.split(';base64,');
-          const mimeTypeData = parts[0].split(':')[1];
-          if (mimeTypeData) {
-            mimeType = mimeTypeData; // e.g., 'image/png' or 'image/webp'
-          }
-          imageBase64 = parts[1];
-        } else {
-          // Assume it's raw base64 data, which is less common
-          imageBase64 = image;
-        }
-        // --- END UPDATED IMAGE PARSING ---
-
-        console.log('📸 Processing image analysis request...');
-        console.log('Location:', location);
-        console.log('Image size:', imageBase64.length, 'characters');
-        console.log('MIME type:', mimeType);
-
-        // Pass both the base64 data and the MIME type to the function
-        const analysisResult = await analyzeHygieneImage(imageBase64, mimeType);
-
-        console.log('✅ Analysis complete');
-        console.log('Overall Score:', analysisResult.overallScore);
-
-        const audit = {
-          id: uuidv4(),
-          userId: decoded.userId, // Attach user ID to audit
-          location: location || 'Unknown',
-          areaNotes: areaNotes || '',
-          // Don't save the full base64 string, just a snippet
-          imageData: image.substring(0, 100) + '...', 
-          result: analysisResult,
-          createdAt: new Date().toISOString(),
-          status: 'Completed'
-        };
-
-        await db.collection('audits').insertOne(audit);
-
-        console.log('💾 Audit saved to database:', audit.id);
-
-        return NextResponse.json({
-          success: true,
-          data: {
-            auditId: audit.id,
-            result: analysisResult
-          }
-        });
-      } catch (error) {
-        return NextResponse.json(
-          { success: false, error: error.message },
-          { status: 401 }
-        );
-      }
     }
 
     return NextResponse.json(

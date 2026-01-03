@@ -38,7 +38,7 @@ function NewAuditContent() {
   const streamRef = useRef(null);
   
   const { toast } = useToast();
-  const { token } = useAuth();
+  const { getToken } = useAuth();
 
   // Animate progress while loading
   useEffect(() => {
@@ -211,11 +211,22 @@ function NewAuditContent() {
       reader.onloadend = async () => {
         const base64Image = reader.result;
 
+        // Get Firebase ID token
+        const firebaseToken = await getToken();
+        if (!firebaseToken) {
+          toast({
+            title: 'Authentication Error',
+            description: 'Please log in to create an audit',
+            variant: 'destructive'
+          });
+          return;
+        }
+
         const response = await fetch('/api/analyze', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${firebaseToken}`
           },
           body: JSON.stringify({
             image: base64Image,
