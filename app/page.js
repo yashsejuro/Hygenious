@@ -56,14 +56,10 @@ export default function LandingPage() {
           <div className="flex items-center justify-between">
             <motion.div 
               className="flex items-center space-x-2"
-              whileHover={{ scale: 1.05 }}
+              whileHover={{ scale: 1.03 }}
+              transition={{ duration: 0.3 }}
             >
-              <motion.div
-                animate={{ rotate: [0, 10, -10, 0] }}
-                transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
-              >
-                <Shield className="h-8 w-8 text-blue-600" />
-              </motion.div>
+              <Shield className="h-8 w-8 text-blue-600" />
               <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
                 Hygenious - Smart Audit
               </span>
@@ -143,16 +139,9 @@ export default function LandingPage() {
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800">
               AI-Powered Hygiene Auditing
             </span>
-            <motion.span 
-              className="block bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 mt-2"
-              animate={{ 
-                backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
-              }}
-              transition={{ duration: 5, repeat: Infinity }}
-              style={{ backgroundSize: '200% auto' }}
-            >
+            <span className="block bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 mt-2">
               in Seconds
-            </motion.span>
+            </span>
           </motion.h1>
           
           <motion.p 
@@ -273,15 +262,15 @@ export default function LandingPage() {
             <motion.div
               key={index}
               variants={itemVariants}
-              whileHover={{ y: -10 }}
-              transition={{ duration: 0.3 }}
+              whileHover={{ y: -8, scale: 1.01 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
             >
               <GlassCard hover={false} className="h-full">
                 <Card className="h-full border-0 bg-transparent shadow-none">
                   <CardHeader>
                     <motion.div
-                      whileHover={{ rotate: 360, scale: 1.2 }}
-                      transition={{ duration: 0.5 }}
+                      whileHover={{ scale: 1.1 }}
+                      transition={{ duration: 0.3 }}
                     >
                       <feature.icon className={`h-12 w-12 ${feature.color} mb-4`} />
                     </motion.div>
@@ -350,13 +339,13 @@ export default function LandingPage() {
               >
                 <motion.div 
                   className="bg-gradient-to-r from-blue-600 to-purple-600 text-white w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4"
-                  whileHover={{ scale: 1.1, rotate: 360 }}
-                  transition={{ duration: 0.5 }}
+                  whileHover={{ scale: 1.1 }}
+                  transition={{ duration: 0.3 }}
                 >
                   {step.num}
                 </motion.div>
                 <motion.div
-                  whileHover={{ scale: 1.2, y: -5 }}
+                  whileHover={{ scale: 1.1, y: -3 }}
                   transition={{ duration: 0.3 }}
                 >
                   <step.icon className="h-10 w-10 text-blue-600 mx-auto mb-4" />
@@ -445,20 +434,10 @@ export default function LandingPage() {
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
         viewport={{ once: true }}
+        transition={{ duration: 0.5 }}
       >
-        {/* Animated gradient background */}
+        {/* Gradient background */}
         <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600" />
-        <motion.div 
-          className="absolute inset-0 opacity-30"
-          animate={{
-            backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
-          }}
-          transition={{ duration: 10, repeat: Infinity }}
-          style={{
-            backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.3) 1px, transparent 1px)',
-            backgroundSize: '50px 50px'
-          }}
-        />
         
         <div className="container mx-auto px-4 text-center relative z-10">
           <motion.h2 
