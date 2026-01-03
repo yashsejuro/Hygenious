@@ -78,6 +78,18 @@ function DashboardContent() {
           'Authorization': `Bearer ${token}`,
         },
       });
+
+      if (response.status === 401) {
+        // Token expired or invalid, logout user
+        toast({
+          title: 'Session Expired',
+          description: 'Please log in again',
+          variant: 'destructive',
+        });
+        logout();
+        return;
+      }
+
       const data = await response.json();
       if (data.success) {
         setStats(data.data);
@@ -119,6 +131,13 @@ function DashboardContent() {
           'Authorization': `Bearer ${token}`,
         },
       });
+
+      if (response.status === 401) {
+        // Token expired or invalid, logout user
+        logout();
+        return;
+      }
+
       const data = await response.json();
       if (data.success) {
         setFilteredAudits(data.data);
@@ -206,6 +225,18 @@ function DashboardContent() {
           'Authorization': `Bearer ${token}`,
         },
       });
+
+      if (response.status === 401) {
+        // Token expired or invalid, logout user
+        toast({
+          title: 'Session Expired',
+          description: 'Please log in again',
+          variant: 'destructive',
+        });
+        logout();
+        return;
+      }
+
       const data = await response.json();
       
       if (!data.success || !data.data || data.data.length === 0) {

@@ -17,11 +17,19 @@ export function AuthProvider({ children }) {
     const storedUser = localStorage.getItem('user');
 
     if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
-      
-      // Verify token is still valid
-      verifyToken(storedToken);
+      try {
+        setToken(storedToken);
+        setUser(JSON.parse(storedUser));
+        
+        // Verify token is still valid
+        verifyToken(storedToken);
+      } catch (error) {
+        console.error('Failed to parse stored user data:', error);
+        // Clear corrupted data
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setLoading(false);
+      }
     } else {
       setLoading(false);
     }
