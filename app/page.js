@@ -136,10 +136,26 @@ export default function LandingPage() {
             variants={itemVariants}
             className="text-5xl md:text-7xl font-bold mb-6"
           >
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800">
+            <span 
+              className="bg-clip-text text-transparent animate-gradient-flow"
+              style={{
+                background: 'linear-gradient(120deg, #1e293b, #3b82f6, #8b5cf6, #ec4899, #1e293b)',
+                backgroundSize: '300% 300%',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent'
+              }}
+            >
               AI-Powered Hygiene Auditing
             </span>
-            <span className="block bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 mt-2">
+            <span 
+              className="block bg-clip-text text-transparent animate-gradient-flow mt-2"
+              style={{
+                background: 'linear-gradient(120deg, #3b82f6, #8b5cf6, #ec4899, #f59e0b, #3b82f6)',
+                backgroundSize: '300% 300%',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent'
+              }}
+            >
               in Seconds
             </span>
           </motion.h1>
