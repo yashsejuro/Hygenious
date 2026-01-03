@@ -34,17 +34,21 @@ import {
   X,
   Calendar,
   FileSpreadsheet,
-  SlidersHorizontal
+  SlidersHorizontal,
+  LogOut
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import { useAuth } from '@/contexts/AuthContext';
 
-export default function DashboardPage() {
+function DashboardContent() {
   const [stats, setStats] = useState(null);
   const [rankings, setRankings] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const { toast } = useToast();
+  const { user, logout, token } = useAuth();
 
   // Search and Filter States
   const [searchQuery, setSearchQuery] = useState('');
@@ -69,13 +73,40 @@ export default function DashboardPage() {
 
   const fetchDashboardStats = async () => {
     try {
-      const response = await fetch('/api/dashboard/stats');
+      const response = await fetch('/api/dashboard/stats', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.status === 401) {
+        // Token expired or invalid, logout user
+        toast({
+          title: 'Session Expired',
+          description: 'Please log in again',
+          variant: 'destructive',
+        });
+        logout();
+        return;
+      }
+
       const data = await response.json();
       if (data.success) {
         setStats(data.data);
+      } else {
+        toast({
+          title: 'Error',
+          description: 'Failed to fetch dashboard stats',
+          variant: 'destructive',
+        });
       }
     } catch (error) {
       console.error('Error fetching stats:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch dashboard stats',
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
     }
@@ -95,7 +126,18 @@ export default function DashboardPage() {
 
   const fetchAllAudits = async () => {
     try {
-      const response = await fetch('/api/audits');
+      const response = await fetch('/api/audits', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.status === 401) {
+        // Token expired or invalid, logout user
+        logout();
+        return;
+      }
+
       const data = await response.json();
       if (data.success) {
         setFilteredAudits(data.data);
@@ -178,7 +220,23 @@ export default function DashboardPage() {
   const exportToCSV = async () => {
     try {
       // Fetch all audits for export
-      const response = await fetch('/api/audits');
+      const response = await fetch('/api/audits', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.status === 401) {
+        // Token expired or invalid, logout user
+        toast({
+          title: 'Session Expired',
+          description: 'Please log in again',
+          variant: 'destructive',
+        });
+        logout();
+        return;
+      }
+
       const data = await response.json();
       
       if (!data.success || !data.data || data.data.length === 0) {
@@ -400,6 +458,23 @@ export default function DashboardPage() {
               <h1 className="text-2xl font-bold">Dashboard</h1>
             </div>
             <div className="flex items-center space-x-2">
+              {user && (
+                <div className="flex items-center space-x-3 mr-2">
+                  <div className="text-right hidden sm:block">
+                    <p className="text-sm font-medium">{user.name}</p>
+                    <p className="text-xs text-gray-500">{user.email}</p>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={logout}
+                    className="flex items-center"
+                  >
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Logout
+                  </Button>
+                </div>
+              )}
               <Button 
                 variant="outline" 
                 onClick={exportToCSV}
@@ -933,5 +1008,13 @@ export default function DashboardPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <ProtectedRoute>
+      <DashboardContent />
+    </ProtectedRoute>
   );
 }

@@ -14,8 +14,10 @@ import { ArrowLeft, Upload, Camera, CheckCircle, AlertCircle, Download, Award, S
 import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
 import QRCode from 'qrcode';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import { useAuth } from '@/contexts/AuthContext';
 
-export default function NewAuditPage() {
+function NewAuditContent() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [preview, setPreview] = useState('');
   const [location, setLocation] = useState('Kitchen');
@@ -36,6 +38,7 @@ export default function NewAuditPage() {
   const streamRef = useRef(null);
   
   const { toast } = useToast();
+  const { token } = useAuth();
 
   // Animate progress while loading
   useEffect(() => {
@@ -211,7 +214,8 @@ export default function NewAuditPage() {
         const response = await fetch('/api/analyze', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify({
             image: base64Image,
@@ -987,5 +991,13 @@ function CertificateView({ data, qrCodeUrl, onDownload, onShare, onPrint }) {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function NewAuditPage() {
+  return (
+    <ProtectedRoute>
+      <NewAuditContent />
+    </ProtectedRoute>
   );
 }
