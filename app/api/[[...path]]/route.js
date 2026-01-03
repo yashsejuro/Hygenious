@@ -1,7 +1,14 @@
 import { MongoClient } from 'mongodb';
 import { v4 as uuidv4 } from 'uuid';
 import { NextResponse } from 'next/server';
-import { GoogleGenerativeAI } from '@google/generative-ai'; // Import Google AI SDK
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import { 
+  generateToken, 
+  verifyToken, 
+  hashPassword, 
+  comparePassword, 
+  authenticateRequest 
+} from '@/lib/auth';
 
 // --- NEW GEMINI CONFIG ---
 // Get your API key from environment variables
@@ -163,78 +170,140 @@ export async function GET(request) {
   try {
     const { db } = await connectToDatabase();
 
-    if (path === 'audits') {
-      const audits = await db.collection('audits')
-        .find({})
-        .sort({ createdAt: -1 })
-        .limit(100)
-        .toArray();
-      
-      return NextResponse.json({ 
-        success: true, 
-        data: audits,
-        count: audits.length 
-      });
-    }
-
-    if (path.startsWith('audits/')) {
-      const auditId = path.split('/')[1];
-      const audit = await db.collection('audits').findOne({ id: auditId });
-      
-      if (!audit) {
+    // Auth endpoint: GET /api/auth/me
+    if (path === 'auth/me') {
+      try {
+        const authHeader = request.headers.get('authorization');
+        const decoded = authenticateRequest(authHeader);
+        
+        const user = await db.collection('users').findOne(
+          { id: decoded.userId },
+          { projection: { password: 0 } }
+        );
+        
+        if (!user) {
+          return NextResponse.json(
+            { success: false, error: 'User not found' },
+            { status: 404 }
+          );
+        }
+        
+        return NextResponse.json({ success: true, data: user });
+      } catch (error) {
         return NextResponse.json(
-          { success: false, error: 'Audit not found' }, 
-          { status: 404 }
+          { success: false, error: error.message },
+          { status: 401 }
         );
       }
-      
-      return NextResponse.json({ success: true, data: audit });
     }
 
-    if (path === 'dashboard/stats') {
-      // (Your existing dashboard logic is great and remains unchanged)
-      const audits = await db.collection('audits')
-        .find({})
-        .sort({ createdAt: -1 })
-        .limit(100)
-        .toArray();
-      
-      const totalAudits = audits.length;
-      const avgScore = totalAudits > 0 
-        ? Math.round(audits.reduce((sum, a) => sum + (a.result?.overallScore || 0), 0) / totalAudits)
-        : 0;
-      
-      const criticalIssues = audits.reduce((count, a) => {
-        const critical = (a.result?.issues || []).filter(i => i.severity === 'Critical').length;
-        return count + critical;
-      }, 0);
+    // Protected: GET /api/audits
+    if (path === 'audits') {
+      try {
+        const authHeader = request.headers.get('authorization');
+        const decoded = authenticateRequest(authHeader);
+        
+        const audits = await db.collection('audits')
+          .find({ userId: decoded.userId })
+          .sort({ createdAt: -1 })
+          .limit(100)
+          .toArray();
+        
+        return NextResponse.json({ 
+          success: true, 
+          data: audits,
+          count: audits.length 
+        });
+      } catch (error) {
+        return NextResponse.json(
+          { success: false, error: error.message },
+          { status: 401 }
+        );
+      }
+    }
 
-      const locations = [...new Set(audits.map(a => a.location).filter(Boolean))];
-      
-      const recentAudits = audits.slice(0, 5).map(a => ({
-        id: a.id,
-        location: a.location,
-        score: a.result?.overallScore || 0,
-        date: a.createdAt,
-        status: 'Completed'
-      }));
-
-      const scoreTrend = audits.slice(0, 7).reverse().map(a => ({
-        date: new Date(a.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        score: a.result?.overallScore || 0
-      }));
-
-      return NextResponse.json({
-        success: true,
-        data: {
-          totalAudits,
-          avgScore,
-          criticalIssues,
-          locationsCount: locations.length,
-          recentAudits,
-          scoreTrend
+    // Protected: GET /api/audits/:id
+    if (path.startsWith('audits/')) {
+      try {
+        const authHeader = request.headers.get('authorization');
+        const decoded = authenticateRequest(authHeader);
+        
+        const auditId = path.split('/')[1];
+        const audit = await db.collection('audits').findOne({ 
+          id: auditId,
+          userId: decoded.userId 
+        });
+        
+        if (!audit) {
+          return NextResponse.json(
+            { success: false, error: 'Audit not found' }, 
+            { status: 404 }
+          );
         }
-      });
+        
+        return NextResponse.json({ success: true, data: audit });
+      } catch (error) {
+        return NextResponse.json(
+          { success: false, error: error.message },
+          { status: 401 }
+        );
+      }
+    }
+
+    // Protected: GET /api/dashboard/stats
+    if (path === 'dashboard/stats') {
+      try {
+        const authHeader = request.headers.get('authorization');
+        const decoded = authenticateRequest(authHeader);
+        
+        const audits = await db.collection('audits')
+          .find({ userId: decoded.userId })
+          .sort({ createdAt: -1 })
+          .limit(100)
+          .toArray();
+        
+        const totalAudits = audits.length;
+        const avgScore = totalAudits > 0 
+          ? Math.round(audits.reduce((sum, a) => sum + (a.result?.overallScore || 0), 0) / totalAudits)
+          : 0;
+        
+        const criticalIssues = audits.reduce((count, a) => {
+          const critical = (a.result?.issues || []).filter(i => i.severity === 'Critical').length;
+          return count + critical;
+        }, 0);
+
+        const locations = [...new Set(audits.map(a => a.location).filter(Boolean))];
+        
+        const recentAudits = audits.slice(0, 5).map(a => ({
+          id: a.id,
+          location: a.location,
+          score: a.result?.overallScore || 0,
+          date: a.createdAt,
+          status: 'Completed'
+        }));
+
+        const scoreTrend = audits.slice(0, 7).reverse().map(a => ({
+          date: new Date(a.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          score: a.result?.overallScore || 0
+        }));
+
+        return NextResponse.json({
+          success: true,
+          data: {
+            totalAudits,
+            avgScore,
+            criticalIssues,
+            locationsCount: locations.length,
+            recentAudits,
+            scoreTrend
+          }
+        });
+      } catch (error) {
+        return NextResponse.json(
+          { success: false, error: error.message },
+          { status: 401 }
+        );
+      }
     }
 
     if (path === 'health') {
@@ -270,70 +339,201 @@ export async function POST(request) {
   const path = pathname.replace('/api/', '');
 
   try {
-    if (path === 'analyze') {
-      const body = await request.json();
-      const { image, location, areaNotes } = body;
+    const { db } = await connectToDatabase();
 
-      if (!image) {
+    // Auth endpoint: POST /api/auth/register
+    if (path === 'auth/register') {
+      const body = await request.json();
+      const { email, password, name, companyName } = body;
+
+      // Validate required fields
+      if (!email || !password || !name) {
         return NextResponse.json(
-          { success: false, error: 'Image is required' }, 
+          { success: false, error: 'Email, password, and name are required' },
           { status: 400 }
         );
       }
 
-      // --- UPDATED IMAGE PARSING ---
-      // This now correctly extracts the MIME type and base64 data
-      let imageBase64;
-      let mimeType = 'image/jpeg'; // Default
-
-      if (image.startsWith('data:')) {
-        const parts = image.split(';base64,');
-        const mimeTypeData = parts[0].split(':')[1];
-        if (mimeTypeData) {
-          mimeType = mimeTypeData; // e.g., 'image/png' or 'image/webp'
-        }
-        imageBase64 = parts[1];
-      } else {
-        // Assume it's raw base64 data, which is less common
-        imageBase64 = image;
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return NextResponse.json(
+          { success: false, error: 'Invalid email format' },
+          { status: 400 }
+        );
       }
-      // --- END UPDATED IMAGE PARSING ---
 
-      console.log('📸 Processing image analysis request...');
-      console.log('Location:', location);
-      console.log('Image size:', imageBase64.length, 'characters');
-      console.log('MIME type:', mimeType);
+      // Validate password length
+      if (password.length < 6) {
+        return NextResponse.json(
+          { success: false, error: 'Password must be at least 6 characters' },
+          { status: 400 }
+        );
+      }
 
-      // Pass both the base64 data and the MIME type to the function
-      const analysisResult = await analyzeHygieneImage(imageBase64, mimeType);
+      // Check if user already exists
+      const existingUser = await db.collection('users').findOne({ email: email.toLowerCase() });
+      if (existingUser) {
+        return NextResponse.json(
+          { success: false, error: 'User with this email already exists' },
+          { status: 409 }
+        );
+      }
 
-      console.log('✅ Analysis complete');
-      console.log('Overall Score:', analysisResult.overallScore);
+      // Hash password
+      const hashedPassword = await hashPassword(password);
 
-      const { db } = await connectToDatabase();
-
-      const audit = {
+      // Create user
+      const user = {
         id: uuidv4(),
-        location: location || 'Unknown',
-        areaNotes: areaNotes || '',
-        // Don't save the full base64 string, just a snippet
-        imageData: image.substring(0, 100) + '...', 
-        result: analysisResult,
+        email: email.toLowerCase(),
+        password: hashedPassword,
+        name,
+        companyName: companyName || null,
         createdAt: new Date().toISOString(),
-        status: 'Completed'
+        updatedAt: new Date().toISOString(),
       };
 
-      await db.collection('audits').insertOne(audit);
+      await db.collection('users').insertOne(user);
 
-      console.log('💾 Audit saved to database:', audit.id);
+      // Create index on email for faster lookups
+      await db.collection('users').createIndex({ email: 1 }, { unique: true });
+
+      // Generate token
+      const token = generateToken(user);
+
+      // Remove password from response
+      const { password: _, ...userWithoutPassword } = user;
 
       return NextResponse.json({
         success: true,
         data: {
-          auditId: audit.id,
-          result: analysisResult
-        }
+          user: userWithoutPassword,
+          token,
+        },
       });
+    }
+
+    // Auth endpoint: POST /api/auth/login
+    if (path === 'auth/login') {
+      const body = await request.json();
+      const { email, password } = body;
+
+      // Validate required fields
+      if (!email || !password) {
+        return NextResponse.json(
+          { success: false, error: 'Email and password are required' },
+          { status: 400 }
+        );
+      }
+
+      // Find user
+      const user = await db.collection('users').findOne({ email: email.toLowerCase() });
+      if (!user) {
+        return NextResponse.json(
+          { success: false, error: 'Invalid email or password' },
+          { status: 401 }
+        );
+      }
+
+      // Verify password
+      const isPasswordValid = await comparePassword(password, user.password);
+      if (!isPasswordValid) {
+        return NextResponse.json(
+          { success: false, error: 'Invalid email or password' },
+          { status: 401 }
+        );
+      }
+
+      // Generate token
+      const token = generateToken(user);
+
+      // Remove password from response
+      const { password: _, ...userWithoutPassword } = user;
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          user: userWithoutPassword,
+          token,
+        },
+      });
+    }
+
+    // Protected: POST /api/analyze
+    if (path === 'analyze') {
+      try {
+        const authHeader = request.headers.get('authorization');
+        const decoded = authenticateRequest(authHeader);
+        
+        const body = await request.json();
+        const { image, location, areaNotes } = body;
+
+        if (!image) {
+          return NextResponse.json(
+            { success: false, error: 'Image is required' }, 
+            { status: 400 }
+          );
+        }
+
+        // --- UPDATED IMAGE PARSING ---
+        // This now correctly extracts the MIME type and base64 data
+        let imageBase64;
+        let mimeType = 'image/jpeg'; // Default
+
+        if (image.startsWith('data:')) {
+          const parts = image.split(';base64,');
+          const mimeTypeData = parts[0].split(':')[1];
+          if (mimeTypeData) {
+            mimeType = mimeTypeData; // e.g., 'image/png' or 'image/webp'
+          }
+          imageBase64 = parts[1];
+        } else {
+          // Assume it's raw base64 data, which is less common
+          imageBase64 = image;
+        }
+        // --- END UPDATED IMAGE PARSING ---
+
+        console.log('📸 Processing image analysis request...');
+        console.log('Location:', location);
+        console.log('Image size:', imageBase64.length, 'characters');
+        console.log('MIME type:', mimeType);
+
+        // Pass both the base64 data and the MIME type to the function
+        const analysisResult = await analyzeHygieneImage(imageBase64, mimeType);
+
+        console.log('✅ Analysis complete');
+        console.log('Overall Score:', analysisResult.overallScore);
+
+        const audit = {
+          id: uuidv4(),
+          userId: decoded.userId, // Attach user ID to audit
+          location: location || 'Unknown',
+          areaNotes: areaNotes || '',
+          // Don't save the full base64 string, just a snippet
+          imageData: image.substring(0, 100) + '...', 
+          result: analysisResult,
+          createdAt: new Date().toISOString(),
+          status: 'Completed'
+        };
+
+        await db.collection('audits').insertOne(audit);
+
+        console.log('💾 Audit saved to database:', audit.id);
+
+        return NextResponse.json({
+          success: true,
+          data: {
+            auditId: audit.id,
+            result: analysisResult
+          }
+        });
+      } catch (error) {
+        return NextResponse.json(
+          { success: false, error: error.message },
+          { status: 401 }
+        );
+      }
     }
 
     return NextResponse.json(
