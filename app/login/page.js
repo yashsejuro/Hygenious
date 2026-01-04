@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
-import { Loader2, Mail, Lock, ArrowRight, Shield, Sparkles } from 'lucide-react';
+import { Loader2, Mail, Lock, ArrowRight, Shield, Sparkles, Eye, EyeOff } from 'lucide-react';
 import { AnimatedBackground, GlassCard } from '@/components/ui/animated-background';
 import { LoadingSpinner } from '@/components/ui/loading-states';
 
@@ -20,6 +20,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { login, loginWithGoogle, isAuthenticated, resendVerification } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
@@ -145,7 +146,7 @@ export default function LoginPage() {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.3 }}
                   >
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="email" className="text-sm font-medium text-gray-700">Email</Label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                       <Input
@@ -154,7 +155,7 @@ export default function LoginPage() {
                         placeholder="you@example.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="pl-10 bg-white/50 backdrop-blur-sm border-white/20 focus:border-blue-500 transition-all"
+                        className="pl-10 bg-white/50 backdrop-blur-sm border-white/20 focus:border-blue-500 transition-all duration-300 focus:ring-2 focus:ring-blue-500/20"
                         disabled={loading}
                         required
                       />
@@ -167,19 +168,32 @@ export default function LoginPage() {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.4 }}
                   >
-                    <Label htmlFor="password">Password</Label>
+                    <Label htmlFor="password" className="text-sm font-medium text-gray-700">Password</Label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                       <Input
                         id="password"
-                        type="password"
+                        type={showPassword ? "text" : "password"}
                         placeholder="••••••••"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="pl-10 bg-white/50 backdrop-blur-sm border-white/20 focus:border-blue-500 transition-all"
+                        className="pl-10 pr-10 bg-white/50 backdrop-blur-sm border-white/20 focus:border-blue-500 transition-all duration-300 focus:ring-2 focus:ring-blue-500/20"
                         disabled={loading}
                         required
                       />
+                      <motion.button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </motion.button>
                     </div>
                   </motion.div>
 
@@ -191,7 +205,7 @@ export default function LoginPage() {
                     <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                       <Button
                         type="submit"
-                        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transition-all duration-300"
                         disabled={loading || googleLoading}
                       >
                         {loading ? (
@@ -228,7 +242,7 @@ export default function LoginPage() {
                     <Button
                       type="button"
                       variant="outline"
-                      className="w-full bg-white/50 backdrop-blur-sm border-white/20 hover:bg-white/70"
+                      className="w-full bg-white/50 backdrop-blur-sm border-white/20 hover:bg-white/70 transition-all duration-300"
                       disabled={loading || googleLoading}
                       onClick={async () => {
                         setGoogleLoading(true);
@@ -301,8 +315,12 @@ export default function LoginPage() {
                   transition={{ delay: 0.7 }}
                 >
                   Don't have an account?{' '}
-                  <Link href="/register" className="text-blue-600 hover:text-purple-600 font-medium transition-colors">
+                  <Link 
+                    href="/register" 
+                    className="text-blue-600 hover:text-purple-600 font-medium transition-colors relative group"
+                  >
                     Sign up
+                    <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-purple-600 group-hover:w-full transition-all duration-300"></span>
                   </Link>
                 </motion.div>
                 
@@ -313,11 +331,11 @@ export default function LoginPage() {
                   transition={{ delay: 0.8 }}
                 >
                   By signing in, you agree to our{' '}
-                  <a href="#" className="text-blue-600 hover:underline">
+                  <a href="#" className="text-blue-600 hover:underline transition-all">
                     Terms of Service
                   </a>{' '}
                   and{' '}
-                  <a href="#" className="text-blue-600 hover:underline">
+                  <a href="#" className="text-blue-600 hover:underline transition-all">
                     Privacy Policy
                   </a>
                 </motion.div>
