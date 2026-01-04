@@ -14,6 +14,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { Loader2, Mail, Lock, ArrowRight, Shield, Sparkles, Eye, EyeOff } from 'lucide-react';
 import { AnimatedBackground, GlassCard } from '@/components/ui/animated-background';
 import { LoadingSpinner } from '@/components/ui/loading-states';
+import { useReducedMotion } from '@/hooks/use-reduced-motion';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -24,6 +25,7 @@ export default function LoginPage() {
   const { login, loginWithGoogle, isAuthenticated, resendVerification } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
+  const prefersReducedMotion = useReducedMotion();
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -110,21 +112,21 @@ export default function LoginPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.5 }}
           className="w-full max-w-md"
         >
-          <GlassCard hover={false} className="overflow-hidden">
+          <GlassCard hover={!prefersReducedMotion} className="overflow-hidden">
             <Card className="border-0 bg-transparent shadow-none">
               <CardHeader className="space-y-1 pb-4">
                 <motion.div 
                   className="flex items-center justify-center mb-4"
-                  initial={{ scale: 0 }}
+                  initial={prefersReducedMotion ? { scale: 1 } : { scale: 0 }}
                   animate={{ scale: 1 }}
-                  transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                  transition={prefersReducedMotion ? {} : { delay: 0.2, type: "spring", stiffness: 200 }}
                 >
                   <motion.div 
                     className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-3 rounded-2xl"
-                    whileHover={{ rotate: 360, scale: 1.1 }}
+                    whileHover={prefersReducedMotion ? {} : { rotate: 360, scale: 1.1 }}
                     transition={{ duration: 0.5 }}
                   >
                     <Shield className="h-8 w-8" />
@@ -142,7 +144,7 @@ export default function LoginPage() {
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <motion.div 
                     className="space-y-2"
-                    initial={{ opacity: 0, x: -20 }}
+                    initial={prefersReducedMotion ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.3 }}
                   >
@@ -164,7 +166,7 @@ export default function LoginPage() {
 
                   <motion.div 
                     className="space-y-2"
-                    initial={{ opacity: 0, x: -20 }}
+                    initial={prefersReducedMotion ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.4 }}
                   >
@@ -185,8 +187,10 @@ export default function LoginPage() {
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
                         className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
+                        whileHover={prefersReducedMotion ? {} : { scale: 1.1 }}
+                        whileTap={prefersReducedMotion ? {} : { scale: 0.9 }}
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                        aria-pressed={showPassword}
                       >
                         {showPassword ? (
                           <EyeOff className="h-4 w-4" />
@@ -198,11 +202,14 @@ export default function LoginPage() {
                   </motion.div>
 
                   <motion.div
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={prefersReducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.5 }}
                   >
-                    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                    <motion.div 
+                      whileHover={prefersReducedMotion ? {} : { scale: 1.02 }} 
+                      whileTap={prefersReducedMotion ? {} : { scale: 0.98 }}
+                    >
                       <Button
                         type="submit"
                         className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transition-all duration-300"
@@ -234,11 +241,14 @@ export default function LoginPage() {
                 </div>
 
                 <motion.div
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={prefersReducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.6 }}
                 >
-                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  <motion.div 
+                    whileHover={prefersReducedMotion ? {} : { scale: 1.02 }} 
+                    whileTap={prefersReducedMotion ? {} : { scale: 0.98 }}
+                  >
                     <Button
                       type="button"
                       variant="outline"
@@ -310,7 +320,7 @@ export default function LoginPage() {
               <CardFooter className="flex flex-col space-y-4 pt-2">
                 <motion.div 
                   className="text-sm text-center text-gray-600"
-                  initial={{ opacity: 0 }}
+                  initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.7 }}
                 >
@@ -326,7 +336,7 @@ export default function LoginPage() {
                 
                 <motion.div 
                   className="text-xs text-center text-gray-500"
-                  initial={{ opacity: 0 }}
+                  initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.8 }}
                 >

@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
 import { Loader2, Mail, Lock, User, Building, ArrowRight, Shield, Eye, EyeOff } from 'lucide-react';
 import { AnimatedBackground, GlassCard } from '@/components/ui/animated-background';
+import { useReducedMotion } from '@/hooks/use-reduced-motion';
 
 // Animation variants
 const containerVariants = {
@@ -68,6 +69,7 @@ export default function RegisterPage() {
   const { register, loginWithGoogle, isAuthenticated } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
+  const prefersReducedMotion = useReducedMotion();
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -135,22 +137,22 @@ export default function RegisterPage() {
       <motion.div 
         className="relative z-10 flex items-center justify-center min-h-screen p-4"
         variants={containerVariants}
-        initial="hidden"
+        initial={prefersReducedMotion ? "visible" : "hidden"}
         animate="visible"
       >
         <motion.div
           variants={cardVariants}
-          whileHover="hover"
+          whileHover={prefersReducedMotion ? {} : "hover"}
           className="w-full max-w-md"
         >
-          <GlassCard hover={false} className="overflow-hidden">
+          <GlassCard hover={!prefersReducedMotion} className="overflow-hidden">
             <Card className="border-0 bg-transparent shadow-none">
               <CardHeader className="space-y-4 text-center pb-8">
                 <motion.div 
                   className="flex justify-center"
-                  initial={{ scale: 0, rotate: -180 }}
+                  initial={prefersReducedMotion ? { scale: 1, rotate: 0 } : { scale: 0, rotate: -180 }}
                   animate={{ scale: 1, rotate: 0 }}
-                  transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
+                  transition={prefersReducedMotion ? {} : { type: "spring", stiffness: 200, delay: 0.2 }}
                 >
                   <div className="p-4 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg shadow-blue-500/30">
                     <Shield className="h-10 w-10 text-white" />
@@ -230,8 +232,10 @@ export default function RegisterPage() {
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
                         className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
+                        whileHover={prefersReducedMotion ? {} : { scale: 1.1 }}
+                        whileTap={prefersReducedMotion ? {} : { scale: 0.9 }}
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                        aria-pressed={showPassword}
                       >
                         {showPassword ? (
                           <EyeOff className="h-4 w-4" />
@@ -266,8 +270,8 @@ export default function RegisterPage() {
                     variants={itemVariants}
                   >
                     <motion.div 
-                      whileHover="hover" 
-                      whileTap="tap"
+                      whileHover={prefersReducedMotion ? {} : "hover"} 
+                      whileTap={prefersReducedMotion ? {} : "tap"}
                       variants={buttonVariants}
                     >
                       <Button
@@ -305,8 +309,8 @@ export default function RegisterPage() {
 
                 <motion.div variants={itemVariants}>
                   <motion.div 
-                    whileHover="hover" 
-                    whileTap="tap"
+                    whileHover={prefersReducedMotion ? {} : "hover"} 
+                    whileTap={prefersReducedMotion ? {} : "tap"}
                     variants={buttonVariants}
                   >
                     <Button
