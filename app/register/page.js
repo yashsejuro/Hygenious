@@ -15,7 +15,7 @@ import { Loader2, Mail, Lock, User, Building, ArrowRight, Shield, Eye, EyeOff } 
 import { AnimatedBackground, GlassCard } from '@/components/ui/animated-background';
 import { useReducedMotion } from '@/hooks/use-reduced-motion';
 
-// Animation variants
+// Animation variants - defined outside component for performance
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -235,7 +235,7 @@ export default function RegisterPage() {
                         whileHover={prefersReducedMotion ? {} : { scale: 1.1 }}
                         whileTap={prefersReducedMotion ? {} : { scale: 0.9 }}
                         aria-label={showPassword ? "Hide password" : "Show password"}
-                        aria-pressed={showPassword}
+                        aria-pressed={showPassword ? 'true' : 'false'}
                       >
                         {showPassword ? (
                           <EyeOff className="h-4 w-4" />

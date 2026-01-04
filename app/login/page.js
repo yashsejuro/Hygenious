@@ -190,7 +190,7 @@ export default function LoginPage() {
                         whileHover={prefersReducedMotion ? {} : { scale: 1.1 }}
                         whileTap={prefersReducedMotion ? {} : { scale: 0.9 }}
                         aria-label={showPassword ? "Hide password" : "Show password"}
-                        aria-pressed={showPassword}
+                        aria-pressed={showPassword ? 'true' : 'false'}
                       >
                         {showPassword ? (
                           <EyeOff className="h-4 w-4" />
