@@ -7,6 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { ArrowLeft, AlertCircle, CheckCircle } from 'lucide-react';
+import { PageTransition } from '@/components/ui/page-transition';
+import { AnimatedScore } from '@/components/ui/animated-score';
+import { ScoreBadge } from '@/components/ui/score-badge';
 
 export default function AuditDetailPage() {
   const params = useParams();
@@ -35,13 +38,13 @@ export default function AuditDetailPage() {
 
   const getScoreColor = (score) => {
     if (score >= 85) return 'text-green-600';
-    if (score >= 60) return 'text-amber-600';
+    if (score >= 70) return 'text-amber-600';
     return 'text-red-600';
   };
 
   const getScoreLabel = (score) => {
     if (score >= 85) return 'Excellent';
-    if (score >= 60) return 'Good';
+    if (score >= 70) return 'Good';
     if (score >= 40) return 'Fair';
     return 'Poor';
   };
@@ -81,6 +84,7 @@ export default function AuditDetailPage() {
   }
 
   return (
+    <PageTransition>
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white border-b">
@@ -88,7 +92,7 @@ export default function AuditDetailPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <Link href="/dashboard/audits">
-                <Button variant="ghost" size="sm">
+                <Button variant="ghost" size="sm" className="transition-all hover:scale-105">
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Back to History
                 </Button>
@@ -102,7 +106,7 @@ export default function AuditDetailPage() {
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         <div className="space-y-6">
           {/* Score Display */}
-          <Card>
+          <Card className="transition-all hover:shadow-lg">
             <CardHeader>
               <CardTitle>Audit Results</CardTitle>
             </CardHeader>
@@ -131,7 +135,8 @@ export default function AuditDetailPage() {
                   
                   <div className="text-center">
                     <div className={`text-6xl font-bold ${getScoreColor(audit.result?.overallScore || 0)}`}>
-                      {audit.result?.overallScore || 0}/100
+                      <AnimatedScore score={audit.result?.overallScore || 0} />
+                      <span className="text-3xl">/100</span>
                     </div>
                     <div className="text-2xl font-semibold text-gray-600 mt-2">
                       {getScoreLabel(audit.result?.overallScore || 0)}
@@ -139,16 +144,16 @@ export default function AuditDetailPage() {
                   </div>
                   
                   <div className="grid grid-cols-3 gap-4">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-gray-900">{audit.result?.cleanliness || 0}</div>
+                    <div className="text-center space-y-2">
+                      <ScoreBadge score={audit.result?.cleanliness || 0} size="md" />
                       <div className="text-sm text-gray-600">Cleanliness</div>
                     </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-gray-900">{audit.result?.organization || 0}</div>
+                    <div className="text-center space-y-2">
+                      <ScoreBadge score={audit.result?.organization || 0} size="md" />
                       <div className="text-sm text-gray-600">Organization</div>
                     </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-gray-900">{audit.result?.safety || 0}</div>
+                    <div className="text-center space-y-2">
+                      <ScoreBadge score={audit.result?.safety || 0} size="md" />
                       <div className="text-sm text-gray-600">Safety</div>
                     </div>
                   </div>
@@ -159,7 +164,7 @@ export default function AuditDetailPage() {
 
           {/* Assessment */}
           {audit.result?.assessment && (
-            <Card>
+            <Card className="transition-all hover:shadow-lg">
               <CardHeader>
                 <CardTitle>Overall Assessment</CardTitle>
               </CardHeader>
@@ -171,14 +176,14 @@ export default function AuditDetailPage() {
 
           {/* Issues */}
           {audit.result?.issues && audit.result.issues.length > 0 && (
-            <Card>
+            <Card className="transition-all hover:shadow-lg">
               <CardHeader>
                 <CardTitle>Detected Issues ({audit.result.issues.length})</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   {audit.result.issues.map((issue, index) => (
-                    <div key={index} className="border rounded-lg p-4">
+                    <div key={index} className="border rounded-lg p-4 transition-all hover:shadow-md animate-pulse-subtle">
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
@@ -209,7 +214,7 @@ export default function AuditDetailPage() {
 
           {/* Recommendations */}
           {audit.result?.recommendations && audit.result.recommendations.length > 0 && (
-            <Card>
+            <Card className="transition-all hover:shadow-lg">
               <CardHeader>
                 <CardTitle>Recommendations</CardTitle>
               </CardHeader>
@@ -228,7 +233,7 @@ export default function AuditDetailPage() {
 
           {/* Area Notes */}
           {audit.areaNotes && (
-            <Card>
+            <Card className="transition-all hover:shadow-lg">
               <CardHeader>
                 <CardTitle>Area Notes</CardTitle>
               </CardHeader>
@@ -240,5 +245,6 @@ export default function AuditDetailPage() {
         </div>
       </div>
     </div>
+    </PageTransition>
   );
 }
