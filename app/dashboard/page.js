@@ -41,6 +41,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAuth } from '@/contexts/AuthContext';
+import { PageTransition } from '@/components/ui/page-transition';
+import { RoleGuard } from '@/components/ui/role-guard';
 
 function DashboardContent() {
   const [stats, setStats] = useState(null);
@@ -334,19 +336,19 @@ function DashboardContent() {
 
   const getScoreColor = (score) => {
     if (score >= 85) return 'text-green-600';
-    if (score >= 60) return 'text-amber-600';
+    if (score >= 70) return 'text-amber-600';
     return 'text-red-600';
   };
 
   const getScoreBgColor = (score) => {
     if (score >= 85) return 'bg-green-50';
-    if (score >= 60) return 'bg-amber-50';
+    if (score >= 70) return 'bg-amber-50';
     return 'bg-red-50';
   };
 
   const getScoreBorderColor = (score) => {
     if (score >= 85) return 'border-green-200';
-    if (score >= 60) return 'border-amber-200';
+    if (score >= 70) return 'border-amber-200';
     return 'border-red-200';
   };
 
@@ -450,7 +452,7 @@ function DashboardContent() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <Link href="/">
-                <Button variant="ghost" size="sm">
+                <Button variant="ghost" size="sm" className="transition-all hover:scale-105">
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Back to Home
                 </Button>
@@ -468,7 +470,7 @@ function DashboardContent() {
                     variant="outline" 
                     size="sm"
                     onClick={logout}
-                    className="flex items-center"
+                    className="flex items-center transition-all hover:scale-105"
                   >
                     <LogOut className="h-4 w-4 mr-2" />
                     Logout
@@ -478,29 +480,44 @@ function DashboardContent() {
               <Button 
                 variant="outline" 
                 onClick={exportToCSV}
-                className="hidden sm:flex"
+                className="hidden sm:flex transition-all hover:scale-105"
               >
                 <Download className="h-4 w-4 mr-2" />
                 Export CSV
               </Button>
               <Link href="/dashboard">
-                <Button variant="outline">View History</Button>
+                <Button variant="outline" className="transition-all hover:scale-105">View History</Button>
               </Link>
-              <Link href="/dashboard/audits/new">
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  New Audit
-                </Button>
-              </Link>
+              
+              {/* Role-based "New Audit" button - prominent for staff/auditor */}
+              <RoleGuard allowedRoles={['staff', 'auditor']}>
+                <Link href="/dashboard/audits/new">
+                  <Button size="lg" className="transition-all hover:scale-105 shadow-lg">
+                    <Plus className="h-5 w-5 mr-2" />
+                    New Audit
+                  </Button>
+                </Link>
+              </RoleGuard>
+              
+              {/* Regular "New Audit" button for others */}
+              <RoleGuard allowedRoles={['owner', 'customer']}>
+                <Link href="/dashboard/audits/new">
+                  <Button className="transition-all hover:scale-105">
+                    <Plus className="h-4 w-4 mr-2" />
+                    New Audit
+                  </Button>
+                </Link>
+              </RoleGuard>
             </div>
           </div>
         </div>
       </header>
 
+      <PageTransition>
       <div className="container mx-auto px-4 py-8">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card>
+          <Card className="transition-all hover:shadow-lg hover:scale-105">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Audits</CardTitle>
               <ClipboardList className="h-4 w-4 text-muted-foreground" />
@@ -511,7 +528,7 @@ function DashboardContent() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="transition-all hover:shadow-lg hover:scale-105">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Average Score</CardTitle>
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
@@ -524,7 +541,7 @@ function DashboardContent() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="transition-all hover:shadow-lg hover:scale-105">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Critical Issues</CardTitle>
               <AlertTriangle className="h-4 w-4 text-red-600" />
@@ -535,7 +552,7 @@ function DashboardContent() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="transition-all hover:shadow-lg hover:scale-105">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Locations</CardTitle>
               <MapPin className="h-4 w-4 text-muted-foreground" />
@@ -573,19 +590,33 @@ function DashboardContent() {
           </Card>
 
           {/* Quick Actions */}
-          <Card>
+          <Card className="transition-all hover:shadow-lg">
             <CardHeader>
               <CardTitle>Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Link href="/dashboard/audits/new" className="block">
-                <Button className="w-full" size="lg">
-                  <Plus className="h-4 w-4 mr-2" />
-                  New Audit
-                </Button>
-              </Link>
+              {/* Staff/Auditor see prominent New Audit button */}
+              <RoleGuard allowedRoles={['staff', 'auditor']}>
+                <Link href="/dashboard/audits/new" className="block">
+                  <Button className="w-full transition-all hover:scale-105 active:scale-95" size="lg">
+                    <Plus className="h-5 w-5 mr-2" />
+                    New Audit
+                  </Button>
+                </Link>
+              </RoleGuard>
+              
+              {/* Owner/Customer see regular button */}
+              <RoleGuard allowedRoles={['owner', 'customer']}>
+                <Link href="/dashboard/audits/new" className="block">
+                  <Button className="w-full transition-all hover:scale-105 active:scale-95" size="lg">
+                    <Plus className="h-4 w-4 mr-2" />
+                    New Audit
+                  </Button>
+                </Link>
+              </RoleGuard>
+              
               <Button 
-                className="w-full" 
+                className="w-full transition-all hover:scale-105 active:scale-95" 
                 variant="outline"
                 onClick={exportToCSV}
               >
@@ -593,7 +624,7 @@ function DashboardContent() {
                 Export to CSV
               </Button>
               <Link href="/dashboard" className="block">
-                <Button className="w-full" variant="outline">
+                <Button className="w-full transition-all hover:scale-105 active:scale-95" variant="outline">
                   View All Audits
                 </Button>
               </Link>
@@ -797,7 +828,7 @@ function DashboardContent() {
             {filteredAudits.length > 0 ? (
               <div className="space-y-4">
                 {filteredAudits.map((audit) => (
-                  <div key={audit.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+                  <div key={audit.id} className="flex items-center justify-between p-4 border rounded-lg transition-all hover:bg-gray-50 hover:shadow-md hover:scale-[1.01]">
                     <div className="flex-1">
                       <p className="font-medium">{audit.location}</p>
                       <p className="text-sm text-gray-600">
@@ -816,7 +847,7 @@ function DashboardContent() {
                       </span>
                     </div>
                     <Link href={`/dashboard/audits/${audit.id}`}>
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" className="transition-all hover:scale-110">
                         View
                       </Button>
                     </Link>
@@ -833,12 +864,12 @@ function DashboardContent() {
                     : 'Get started by creating your first audit'}
                 </p>
                 {activeFilterCount > 0 ? (
-                  <Button variant="outline" onClick={clearFilters}>
+                  <Button variant="outline" onClick={clearFilters} className="transition-all hover:scale-105">
                     Clear all filters
                   </Button>
                 ) : (
                   <Link href="/dashboard/audits/new">
-                    <Button>
+                    <Button className="transition-all hover:scale-105 active:scale-95">
                       <Plus className="h-4 w-4 mr-2" />
                       Create First Audit
                     </Button>
@@ -850,7 +881,22 @@ function DashboardContent() {
         </Card>
 
         {/* Rankings / Leaderboard Section */}
-        <Card className="mt-8">
+        <RoleGuard allowedRoles={['owner']} fallback={
+          <Card className="mt-8 transition-all hover:shadow-lg">
+            <CardHeader>
+              <div className="flex items-center space-x-3">
+                <Trophy className="h-6 w-6 text-yellow-500" />
+                <div>
+                  <CardTitle>Leaderboard</CardTitle>
+                  <p className="text-sm text-gray-600 mt-1">
+                    View rankings (Owner access only)
+                  </p>
+                </div>
+              </div>
+            </CardHeader>
+          </Card>
+        }>
+        <Card className="mt-8 transition-all hover:shadow-lg">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
@@ -900,7 +946,7 @@ function DashboardContent() {
                     {mockRankings[category.id]?.map((facility, index) => (
                       <div
                         key={facility.id}
-                        className={`grid grid-cols-1 md:grid-cols-12 gap-4 p-4 border-2 rounded-lg hover:shadow-md transition-all ${
+                        className={`grid grid-cols-1 md:grid-cols-12 gap-4 p-4 border-2 rounded-lg transition-all hover:shadow-lg hover:scale-[1.01] ${
                           index === 0 ? 'bg-gradient-to-r from-yellow-50 to-white border-yellow-300' :
                           index === 1 ? 'bg-gradient-to-r from-gray-50 to-white border-gray-300' :
                           index === 2 ? 'bg-gradient-to-r from-orange-50 to-white border-orange-300' :
@@ -981,7 +1027,7 @@ function DashboardContent() {
 
                   {/* View More Button */}
                   <div className="pt-4 text-center">
-                    <Button variant="outline" size="lg">
+                    <Button variant="outline" size="lg" className="transition-all hover:scale-105 active:scale-95">
                       View Full Leaderboard
                       <TrendingUp className="h-4 w-4 ml-2" />
                     </Button>
@@ -1006,7 +1052,9 @@ function DashboardContent() {
             </div>
           </CardContent>
         </Card>
+        </RoleGuard>
       </div>
+      </PageTransition>
     </div>
   );
 }
