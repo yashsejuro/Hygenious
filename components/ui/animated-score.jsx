@@ -25,9 +25,8 @@ export function AnimatedScore({ score, duration = 1500, className }) {
     // Reset to 0 when score changes
     setDisplayScore(0);
 
-    // Calculate steps and interval
+    // Calculate steps and interval for smooth animation
     const steps = 60; // 60fps for smooth animation
-    const increment = score / steps;
     const stepDuration = duration / steps;
 
     let currentStep = 0;

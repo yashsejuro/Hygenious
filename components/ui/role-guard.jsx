@@ -19,19 +19,15 @@ export function RoleGuard({ allowedRoles = [], children, fallback = null }) {
   // Get user's role, default to 'customer' if not present
   const userRole = user?.role || 'customer';
 
-  // Normalize roles: treat 'staff' and 'auditor' as equivalent
-  const normalizeRole = (role) => {
-    if (role === 'staff' || role === 'auditor') {
-      return 'staff-auditor';
-    }
-    return role;
-  };
-
-  const normalizedUserRole = normalizeRole(userRole);
-  const normalizedAllowedRoles = allowedRoles.map(normalizeRole);
-
   // Check if user has access
-  const hasAccess = normalizedAllowedRoles.includes(normalizedUserRole);
+  // 'staff' and 'auditor' are treated as equivalent
+  const hasAccess = allowedRoles.some(allowedRole => {
+    if ((allowedRole === 'staff' || allowedRole === 'auditor') && 
+        (userRole === 'staff' || userRole === 'auditor')) {
+      return true;
+    }
+    return allowedRole === userRole;
+  });
 
   if (!hasAccess) {
     return fallback;
