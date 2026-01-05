@@ -16,6 +16,10 @@ import { Toaster } from '@/components/ui/toaster';
 import QRCode from 'qrcode';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAuth } from '@/contexts/AuthContext';
+import { PageTransition } from '@/components/ui/page-transition';
+import { AnimatedScore } from '@/components/ui/animated-score';
+import { ScoreBadge } from '@/components/ui/score-badge';
+import { useReducedMotion } from '@/hooks/use-reduced-motion';
 
 function NewAuditContent() {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -39,10 +43,17 @@ function NewAuditContent() {
   
   const { toast } = useToast();
   const { getToken } = useAuth();
+  const prefersReducedMotion = useReducedMotion();
 
   // Animate progress while loading
   useEffect(() => {
     if (loading) {
+      // Skip animation if user prefers reduced motion
+      if (prefersReducedMotion) {
+        setProgress(90);
+        return;
+      }
+      
       const interval = setInterval(() => {
         setProgress((prev) => {
           if (prev >= 90) return 90;
@@ -54,7 +65,7 @@ function NewAuditContent() {
     } else {
       setProgress(0);
     }
-  }, [loading]);
+  }, [loading, prefersReducedMotion]);
 
   // Cleanup camera on unmount
   useEffect(() => {
@@ -339,17 +350,15 @@ function NewAuditContent() {
 
   const getScoreColor = (score) => {
     if (score >= 85) return 'text-green-600';
-    if (score >= 70) return 'text-blue-600';
-    if (score >= 60) return 'text-amber-600';
+    if (score >= 70) return 'text-amber-600';
     return 'text-red-600';
   };
 
   const getScoreLabel = (score) => {
     if (score >= 85) return 'Excellent';
     if (score >= 70) return 'Good';
-    if (score >= 60) return 'Fair';
-    if (score >= 40) return 'Poor';
-    return 'Critical';
+    if (score >= 40) return 'Fair';
+    return 'Poor';
   };
 
   const getScoreGrade = (score) => {
@@ -435,6 +444,7 @@ function NewAuditContent() {
   };
 
   return (
+    <PageTransition>
     <div className="min-h-screen bg-gray-50">
       <Toaster />
       
@@ -489,7 +499,7 @@ function NewAuditContent() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <Link href="/dashboard">
-                <Button variant="ghost" size="sm">
+                <Button variant="ghost" size="sm" className="transition-all hover:scale-105">
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Back to Dashboard
                 </Button>
@@ -628,7 +638,7 @@ function NewAuditContent() {
                 <Button
                   onClick={handleAnalyze}
                   disabled={!selectedFile || loading || !facilityName.trim()}
-                  className="w-full"
+                  className="w-full transition-all hover:scale-105 active:scale-95"
                   size="lg"
                 >
                   {loading ? (
@@ -715,7 +725,8 @@ function NewAuditContent() {
                   <div className="flex-1 space-y-6">
                     <div className="text-center">
                       <div className={`text-6xl font-bold ${getScoreColor(result.overallScore)}`}>
-                        {result.overallScore}/100
+                        <AnimatedScore score={result.overallScore} />
+                        <span className="text-3xl">/100</span>
                       </div>
                       <div className="text-2xl font-semibold text-gray-600 mt-2">
                         {getScoreLabel(result.overallScore)}
@@ -726,16 +737,16 @@ function NewAuditContent() {
                     </div>
                     
                     <div className="grid grid-cols-3 gap-4">
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-gray-900">{result.cleanliness}</div>
+                      <div className="text-center space-y-2">
+                        <ScoreBadge score={result.cleanliness} size="md" />
                         <div className="text-sm text-gray-600">Cleanliness</div>
                       </div>
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-gray-900">{result.organization}</div>
+                      <div className="text-center space-y-2">
+                        <ScoreBadge score={result.organization} size="md" />
                         <div className="text-sm text-gray-600">Organization</div>
                       </div>
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-gray-900">{result.safety}</div>
+                      <div className="text-center space-y-2">
+                        <ScoreBadge score={result.safety} size="md" />
                         <div className="text-sm text-gray-600">Safety</div>
                       </div>
                     </div>
@@ -841,7 +852,7 @@ function NewAuditContent() {
                   View All Audits
                 </Button>
               </Link>
-              <Button onClick={handleReset} size="lg">
+              <Button onClick={handleReset} size="lg" className="transition-all hover:scale-105 active:scale-95">
                 Analyze Another
               </Button>
             </div>
@@ -849,6 +860,7 @@ function NewAuditContent() {
         )}
       </div>
     </div>
+    </PageTransition>
   );
 }
 
