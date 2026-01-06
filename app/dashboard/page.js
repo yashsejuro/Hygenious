@@ -91,12 +91,12 @@ function DashboardContent() {
       }
 
       const data = await response.json();
-      if (data.success) {
+      if (data && data.success && data.data) {
         setStats(data.data);
       } else {
         toast({
           title: 'Error',
-          description: 'Failed to fetch dashboard stats',
+          description: data?.error || 'Failed to fetch dashboard stats',
           variant: 'destructive',
         });
       }
@@ -116,7 +116,7 @@ function DashboardContent() {
     try {
       const response = await fetch('/api/dashboard/rankings');
       const data = await response.json();
-      if (data.success) {
+      if (data && data.success && data.data) {
         setRankings(data.data);
       }
     } catch (error) {
@@ -139,7 +139,7 @@ function DashboardContent() {
       }
 
       const data = await response.json();
-      if (data.success) {
+      if (data && data.success && data.data) {
         setFilteredAudits(data.data);
       }
     } catch (error) {
@@ -149,28 +149,31 @@ function DashboardContent() {
 
   // Apply search and filters
   const applyFilters = () => {
-    if (!stats?.recentAudits) return;
+    if (!stats?.recentAudits) {
+      setFilteredAudits([]);
+      return;
+    }
 
     let filtered = [...stats.recentAudits];
 
     // Search filter
     if (searchQuery) {
       filtered = filtered.filter(audit => 
-        audit.location?.toLowerCase().includes(searchQuery.toLowerCase())
+        audit?.location?.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
     // Location filter
     if (filters.location !== 'all') {
       filtered = filtered.filter(audit => 
-        audit.location?.toLowerCase() === filters.location.toLowerCase()
+        audit?.location?.toLowerCase() === filters.location.toLowerCase()
       );
     }
 
     // Score range filter
     if (filters.scoreRange !== 'all') {
       filtered = filtered.filter(audit => {
-        const score = audit.score;
+        const score = audit?.score || 0;
         switch (filters.scoreRange) {
           case 'excellent': return score >= 85;
           case 'good': return score >= 70 && score < 85;
@@ -185,7 +188,7 @@ function DashboardContent() {
     if (filters.dateRange !== 'all') {
       const now = new Date();
       filtered = filtered.filter(audit => {
-        const auditDate = new Date(audit.date);
+        const auditDate = new Date(audit?.date || Date.now());
         const diffDays = Math.floor((now - auditDate) / (1000 * 60 * 60 * 24));
         
         switch (filters.dateRange) {
@@ -239,10 +242,10 @@ function DashboardContent() {
 
       const data = await response.json();
       
-      if (!data.success || !data.data || data.data.length === 0) {
+      if (!data || !data.success || !data.data || data.data.length === 0) {
         toast({
           title: 'No data to export',
-          description: 'There are no audits to export',
+          description: data?.error || 'There are no audits to export',
           variant: 'destructive'
         });
         return;
@@ -328,7 +331,9 @@ function DashboardContent() {
   // Get unique locations for filter dropdown
   const getUniqueLocations = () => {
     if (!stats?.recentAudits) return [];
-    const locations = stats.recentAudits.map(audit => audit.location).filter(Boolean);
+    const locations = stats.recentAudits
+      .map(audit => audit?.location)
+      .filter(location => Boolean(location));
     return [...new Set(locations)];
   };
 

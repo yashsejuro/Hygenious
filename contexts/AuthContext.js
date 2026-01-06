@@ -103,8 +103,8 @@ export function AuthProvider({ children }) {
           body: JSON.stringify({
             uid: firebaseUser.uid,
             email: firebaseUser.email,
-            name,
-            companyName,
+            name: name || '',
+            companyName: companyName || '',
             emailVerified: false,
           }),
         });
@@ -187,8 +187,8 @@ export function AuthProvider({ children }) {
           body: JSON.stringify({
             uid: firebaseUser.uid,
             email: firebaseUser.email,
-            name: firebaseUser.displayName,
-            emailVerified: firebaseUser.emailVerified,
+            name: firebaseUser.displayName || '',
+            emailVerified: firebaseUser.emailVerified || false,
           }),
         });
 

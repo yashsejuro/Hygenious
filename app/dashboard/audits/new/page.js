@@ -372,42 +372,12 @@ function NewAuditContent() {
   };
 
   const downloadCertificate = async () => {
-    try {
-      const response = await fetch('/api/certificate/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          ...certificateData,
-          qrCode: qrCodeUrl
-        })
-      });
-
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `Hygiene-Certificate-${certificateData.certificateNumber}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-        
-        toast({
-          title: 'Certificate downloaded!',
-          description: 'Your hygiene certificate has been downloaded successfully.'
-        });
-      }
-    } catch (error) {
-      console.error('Error downloading certificate:', error);
-      toast({
-        title: 'Download failed',
-        description: 'Failed to download certificate. Please try again.',
-        variant: 'destructive'
-      });
-    }
+    // TODO: Implement certificate generation API
+    toast({
+      title: 'Coming soon',
+      description: 'Certificate generation is not implemented yet.',
+      variant: 'destructive'
+    });
   };
 
   const shareCertificate = async () => {

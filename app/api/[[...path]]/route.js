@@ -2,6 +2,8 @@ import { MongoClient } from 'mongodb';
 import { v4 as uuidv4 } from 'uuid';
 import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { getAuth } from 'firebase-admin/auth';
+import admin from 'firebase-admin';
 
 // Get your API key from environment variables
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
@@ -17,6 +19,53 @@ const geminiModel = genAI.getGenerativeModel({
   model: 'gemini-pro-vision',
 });
 
+// Validation functions
+function validateEmail(email) {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+}
+
+function validateImageFormat(image) {
+  // Check if image is a valid base64 string
+  if (!image.startsWith('data:')) {
+    // If not data URL, check if it's a valid base64 string
+    const base64Regex = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
+    return base64Regex.test(image);
+  }
+  
+  // If it's a data URL, check if it's an image
+  const imageTypeRegex = /^data:image\/(jpeg|png|gif|webp|jpg);base64,/;
+  return imageTypeRegex.test(image);
+}
+
+// Initialize Firebase Admin SDK
+let firebaseAdminInitialized = false;
+try {
+  // Check if required environment variables are present
+  if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !process.env.FIREBASE_PRIVATE_KEY) {
+    console.warn(
+      '⚠️ Missing Firebase Admin SDK environment variables. ' +
+      'Please set FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, and FIREBASE_PRIVATE_KEY. ' +
+      'Token verification will use basic decoding.'
+    );
+    throw new Error('Missing Firebase Admin SDK environment variables');
+  }
+  
+  if (!admin.apps.length) {
+    admin.initializeApp({
+      credential: admin.credential.cert({
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+      }),
+    });
+  }
+  firebaseAdminInitialized = true;
+} catch (error) {
+  console.error('Failed to initialize Firebase Admin SDK:', error.message);
+  console.warn('Firebase Admin SDK not available. Token verification will use basic decoding.');
+}
+
 // Helper function to get Firebase UID from Authorization header
 // For now, we accept the Firebase ID token and extract UID
 // In production, you should verify the token with Firebase Admin SDK
@@ -30,20 +79,31 @@ async function getFirebaseUID(authHeader) {
     throw new Error('Token is required');
   }
 
-  // For now, we'll decode the Firebase ID token (JWT) to get UID
-  // TODO: Verify token with Firebase Admin SDK in production
-  try {
-    // Firebase ID tokens are JWTs, decode the payload
-    const parts = token.split('.');
-    if (parts.length === 3) {
-      const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
-      return payload.user_id || payload.sub || payload.uid;
+  if (firebaseAdminInitialized) {
+    try {
+      // Verify the Firebase ID token using Firebase Admin SDK
+      const decodedToken = await getAuth().verifyIdToken(token);
+      return decodedToken.uid;
+    } catch (error) {
+      console.error('Firebase token verification failed:', error);
+      throw new Error('Invalid or expired token');
     }
-    // If it's not a JWT, assume it's the UID directly (for development)
-    return token;
-  } catch (error) {
-    // If decoding fails, assume the token is the UID (for development)
-    return token;
+  } else {
+    // Fallback to basic JWT decoding if Firebase Admin SDK is not available
+    // This is less secure but allows the app to function without Firebase Admin config
+    try {
+      // Firebase ID tokens are JWTs, decode the payload
+      const parts = token.split('.');
+      if (parts.length === 3) {
+        const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
+        return payload.user_id || payload.sub || payload.uid;
+      }
+      // If it's not a JWT, assume it's the UID directly (for development)
+      return token;
+    } catch (error) {
+      // If decoding fails, assume the token is the UID (for development)
+      return token;
+    }
   }
 }
 
@@ -426,9 +486,38 @@ export async function POST(request) {
       const body = await request.json();
       const { uid, email, name, companyName, emailVerified } = body;
 
+      // Input validation
       if (!uid || !email) {
         return NextResponse.json(
           { success: false, error: 'UID and email are required' },
+          { status: 400 }
+        );
+      }
+
+      if (!validateEmail(email)) {
+        return NextResponse.json(
+          { success: false, error: 'Invalid email format' },
+          { status: 400 }
+        );
+      }
+
+      if (name && typeof name !== 'string') {
+        return NextResponse.json(
+          { success: false, error: 'Name must be a string' },
+          { status: 400 }
+        );
+      }
+
+      if (companyName && typeof companyName !== 'string') {
+        return NextResponse.json(
+          { success: false, error: 'Company name must be a string' },
+          { status: 400 }
+        );
+      }
+
+      if (emailVerified !== undefined && typeof emailVerified !== 'boolean') {
+        return NextResponse.json(
+          { success: false, error: 'Email verified must be a boolean' },
           { status: 400 }
         );
       }
@@ -493,9 +582,31 @@ export async function POST(request) {
       const body = await request.json();
       const { image, location, areaNotes } = body;
 
+      // Input validation
       if (!image) {
         return NextResponse.json(
           { success: false, error: 'Image is required' }, 
+          { status: 400 }
+        );
+      }
+
+      if (!validateImageFormat(image)) {
+        return NextResponse.json(
+          { success: false, error: 'Invalid image format' }, 
+          { status: 400 }
+        );
+      }
+
+      if (location && typeof location !== 'string') {
+        return NextResponse.json(
+          { success: false, error: 'Location must be a string' }, 
+          { status: 400 }
+        );
+      }
+
+      if (areaNotes && typeof areaNotes !== 'string') {
+        return NextResponse.json(
+          { success: false, error: 'Area notes must be a string' }, 
           { status: 400 }
         );
       }
@@ -540,13 +651,12 @@ export async function POST(request) {
         console.warn('Auth error (continuing without user):', error.message);
       }
 
+      // Create audit object without storing image data
       const audit = {
         id: uuidv4(),
         userId: userId, // Firebase UID
         location: location || 'Unknown',
         areaNotes: areaNotes || '',
-        // Don't save the full base64 string, just a snippet
-        imageData: image.substring(0, 100) + '...', 
         result: analysisResult,
         createdAt: new Date().toISOString(),
         status: 'Completed'

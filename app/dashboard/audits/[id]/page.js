@@ -123,10 +123,10 @@ export default function AuditDetailPage() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <Link href="/dashboard/audits">
+              <Link href="/dashboard">
                 <Button variant="ghost" size="sm">
                   <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to History
+                  Back to Dashboard
                 </Button>
               </Link>
               <h1 className="text-2xl font-bold text-slate-900">Audit Details</h1>
@@ -144,11 +144,9 @@ export default function AuditDetailPage() {
             <CardContent>
               <div className="flex flex-col md:flex-row items-center gap-8">
                 <div className="flex-shrink-0">
-                  <img
-                    src={audit.imageData}
-                    alt={audit.location}
-                    className="w-64 h-64 object-cover rounded-lg shadow-md"
-                  />
+                  <div className="w-64 h-64 bg-gray-200 rounded-lg shadow-md flex items-center justify-center">
+                    <span className="text-gray-500 text-sm">Image not available</span>
+                  </div>
                 </div>
                 <div className="flex-1 space-y-6">
                   <motion.div
