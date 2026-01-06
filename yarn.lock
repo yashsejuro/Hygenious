@@ -748,6 +748,11 @@
   dependencies:
     sparse-bitfield "^3.0.3"
 
+"@netlify/plugin-nextjs@^5.15.4":
+  version "5.15.4"
+  resolved "https://registry.npmjs.org/@netlify/plugin-nextjs/-/plugin-nextjs-5.15.4.tgz"
+  integrity sha512-IYz01SFmJuj5YluTsFnP+8+Vu6SeK04LVUVaLcjK8x3SNiC+D4XjCfZKREUs3F8ZO+idd+TSHWZcIkUmBKoGjw==
+
 "@next/env@14.2.3":
   version "14.2.3"
   resolved "https://registry.npmjs.org/@next/env/-/env-14.2.3.tgz"
