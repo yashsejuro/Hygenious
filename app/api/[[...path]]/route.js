@@ -1,7 +1,21 @@
 import { MongoClient } from 'mongodb';
 import { v4 as uuidv4 } from 'uuid';
 import { NextResponse } from 'next/server';
-import { GoogleGenerativeAI } from '@google/generative-ai'; // Import Google AI SDK
+import { GoogleGenerativeAI } from '@google/generative-ai';
+
+// Get your API key from environment variables
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+
+if (!GEMINI_API_KEY) {
+  console.warn(
+    '⚠️ GEMINI_API_KEY is not defined. AI analysis will fail. Please add it to your .env file.'
+  );
+}
+
+const genAI = new GoogleGenerativeAI(GEMINI_API_KEY || '');
+const geminiModel = genAI.getGenerativeModel({
+  model: 'gemini-pro-vision',
+});
 
 // Helper function to get Firebase UID from Authorization header
 // For now, we accept the Firebase ID token and extract UID
@@ -32,23 +46,6 @@ async function getFirebaseUID(authHeader) {
     return token;
   }
 }
-
-// --- NEW GEMINI CONFIG ---
-// Get your API key from environment variables
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-
-if (!GEMINI_API_KEY) {
-  console.warn(
-    '⚠️ GEMINI_API_KEY is not defined. AI analysis will fail. Please add it to your .env file.'
-  );
-}
-
-const genAI = new GoogleGenerativeAI(GEMINI_API_KEY || '');
-const geminiModel = genAI.getGenerativeModel({
-  model: 'gemini-pro-vision', // Classic vision model for image analysis
-});
-// --- END NEW GEMINI CONFIG ---
-
 
 const MONGO_URL = process.env.MONGO_URL;
 const DB_NAME = process.env.DB_NAME || 'smart_hygiene_audit';
@@ -84,8 +81,6 @@ async function connectToDatabase() {
     throw new Error(`Failed to connect to MongoDB: ${error.message}`);
   }
 }
-
-// --- UPDATED AI FUNCTION ---
 
 /**
  * Analyze hygiene image using Google Gemini 1.5 Flash
@@ -179,8 +174,6 @@ async function analyzeHygieneImage(imageBase64, mimeType = 'image/jpeg') {
   }
 }
 
-// --- END UPDATED AI FUNCTION ---
-
 
 export async function GET(request) {
   const { pathname } = new URL(request.url);
@@ -260,6 +253,84 @@ export async function GET(request) {
           recentAudits,
           scoreTrend
         }
+      });
+    }
+
+    if (path === 'dashboard/rankings') {
+      const audits = await db.collection('audits')
+        .find({})
+        .sort({ createdAt: -1 })
+        .toArray();
+
+      // Group audits by facility/location and calculate averages
+      const facilityMap = new Map();
+      
+      audits.forEach(audit => {
+        const key = audit.location || 'Unknown Location';
+        if (!facilityMap.has(key)) {
+          facilityMap.set(key, {
+            location: key,
+            facilityName: audit.facilityName || key,
+            scores: [],
+            audits: 0
+          });
+        }
+        
+        const facility = facilityMap.get(key);
+        if (audit.result?.overallScore) {
+          facility.scores.push(audit.result.overallScore);
+        }
+        facility.audits++;
+      });
+
+      // Calculate rankings for each category
+      const createRankings = (category) => {
+        const facilities = Array.from(facilityMap.values())
+          .filter(f => f.scores.length > 0)
+          .map(f => {
+            const avgScore = Math.round(
+              f.scores.reduce((sum, s) => sum + s, 0) / f.scores.length
+            );
+            
+            // Calculate trend (comparing recent audits to older ones)
+            const recentScores = f.scores.slice(0, Math.ceil(f.scores.length / 2));
+            const olderScores = f.scores.slice(Math.ceil(f.scores.length / 2));
+            const recentAvg = recentScores.length > 0
+              ? recentScores.reduce((sum, s) => sum + s, 0) / recentScores.length
+              : avgScore;
+            const olderAvg = olderScores.length > 0
+              ? olderScores.reduce((sum, s) => sum + s, 0) / olderScores.length
+              : avgScore;
+            const trend = Math.round(recentAvg - olderAvg);
+
+            return {
+              location: f.location,
+              facilityName: f.facilityName,
+              score: avgScore,
+              trend: trend,
+              audits: f.audits,
+              category: category
+            };
+          })
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 10); // Top 10
+
+        return facilities;
+      };
+
+      // Create rankings for different categories
+      const categories = {
+        all: createRankings('All Facilities'),
+        kitchen: createRankings('Kitchen'),
+        washroom: createRankings('Washroom'),
+        storage: createRankings('Storage'),
+        dining: createRankings('Dining Area'),
+        office: createRankings('Office')
+      };
+
+      return NextResponse.json({
+        success: true,
+        data: categories
       });
     }
 
