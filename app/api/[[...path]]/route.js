@@ -16,7 +16,7 @@ if (!GEMINI_API_KEY) {
 
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY || '');
 const geminiModel = genAI.getGenerativeModel({
-  model: 'gemini-pro-vision',
+  model: 'gemini-1.5-flash',
 });
 
 // Validation functions
@@ -32,7 +32,7 @@ function validateImageFormat(image) {
     const base64Regex = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
     return base64Regex.test(image);
   }
-  
+
   // If it's a data URL, check if it's an image
   const imageTypeRegex = /^data:image\/(jpeg|png|gif|webp|jpg);base64,/;
   return imageTypeRegex.test(image);
@@ -50,7 +50,7 @@ try {
     );
     throw new Error('Missing Firebase Admin SDK environment variables');
   }
-  
+
   if (!admin.apps.length) {
     admin.initializeApp({
       credential: admin.credential.cert({
@@ -73,7 +73,7 @@ async function getFirebaseUID(authHeader) {
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     throw new Error('Authorization header is required');
   }
-  
+
   const token = authHeader.substring(7);
   if (!token) {
     throw new Error('Token is required');
@@ -201,7 +201,7 @@ async function analyzeHygieneImage(imageBase64, mimeType = 'image/jpeg') {
     const result = await geminiModel.generateContent([prompt, imagePart]);
     const response = result.response;
     const jsonString = response.text();
-    
+
     // Parse the JSON string into an object
     const analysisResult = JSON.parse(jsonString);
 
@@ -214,7 +214,7 @@ async function analyzeHygieneImage(imageBase64, mimeType = 'image/jpeg') {
   } catch (error) {
     console.error('❌ Gemini Analysis Error:', error.message);
     if (error.message.includes('json')) {
-       console.error("Gemini did not return valid JSON. Check the prompt or model settings.");
+      console.error("Gemini did not return valid JSON. Check the prompt or model settings.");
     }
     // Fallback to a "failed analysis" object to avoid crashing the app
     return {
@@ -248,25 +248,25 @@ export async function GET(request) {
         .sort({ createdAt: -1 })
         .limit(100)
         .toArray();
-      
-      return NextResponse.json({ 
-        success: true, 
+
+      return NextResponse.json({
+        success: true,
         data: audits,
-        count: audits.length 
+        count: audits.length
       });
     }
 
     if (path.startsWith('audits/')) {
       const auditId = path.split('/')[1];
       const audit = await db.collection('audits').findOne({ id: auditId });
-      
+
       if (!audit) {
         return NextResponse.json(
-          { success: false, error: 'Audit not found' }, 
+          { success: false, error: 'Audit not found' },
           { status: 404 }
         );
       }
-      
+
       return NextResponse.json({ success: true, data: audit });
     }
 
@@ -277,19 +277,19 @@ export async function GET(request) {
         .sort({ createdAt: -1 })
         .limit(100)
         .toArray();
-      
+
       const totalAudits = audits.length;
-      const avgScore = totalAudits > 0 
+      const avgScore = totalAudits > 0
         ? Math.round(audits.reduce((sum, a) => sum + (a.result?.overallScore || 0), 0) / totalAudits)
         : 0;
-      
+
       const criticalIssues = audits.reduce((count, a) => {
         const critical = (a.result?.issues || []).filter(i => i.severity === 'Critical').length;
         return count + critical;
       }, 0);
 
       const locations = [...new Set(audits.map(a => a.location).filter(Boolean))];
-      
+
       const recentAudits = audits.slice(0, 5).map(a => ({
         id: a.id,
         location: a.location,
@@ -324,7 +324,7 @@ export async function GET(request) {
 
       // Group audits by facility/location and calculate averages
       const facilityMap = new Map();
-      
+
       audits.forEach(audit => {
         const key = audit.location || 'Unknown Location';
         if (!facilityMap.has(key)) {
@@ -335,7 +335,7 @@ export async function GET(request) {
             audits: 0
           });
         }
-        
+
         const facility = facilityMap.get(key);
         if (audit.result?.overallScore) {
           facility.scores.push(audit.result.overallScore);
@@ -351,7 +351,7 @@ export async function GET(request) {
             const avgScore = Math.round(
               f.scores.reduce((sum, s) => sum + s, 0) / f.scores.length
             );
-            
+
             // Calculate trend (comparing recent audits to older ones)
             const recentScores = f.scores.slice(0, Math.ceil(f.scores.length / 2));
             const olderScores = f.scores.slice(Math.ceil(f.scores.length / 2));
@@ -424,19 +424,19 @@ export async function GET(request) {
       try {
         const authHeader = request.headers.get('authorization');
         const uid = await getFirebaseUID(authHeader);
-        
+
         const user = await db.collection('users').findOne(
           { uid: uid },
           { projection: { password: 0 } }
         );
-        
+
         if (!user) {
           return NextResponse.json(
             { success: false, error: 'User not found' },
             { status: 404 }
           );
         }
-        
+
         return NextResponse.json({ success: true, data: user });
       } catch (error) {
         return NextResponse.json(
@@ -459,16 +459,16 @@ export async function GET(request) {
     }
 
     return NextResponse.json(
-      { success: false, error: 'Endpoint not found' }, 
+      { success: false, error: 'Endpoint not found' },
       { status: 404 }
     );
   } catch (error) {
     console.error('GET Error:', error);
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         error: error.message
-      }, 
+      },
       { status: 500 }
     );
   }
@@ -524,7 +524,7 @@ export async function POST(request) {
 
       // Check if user already exists
       const existingUser = await db.collection('users').findOne({ uid: uid });
-      
+
       if (existingUser) {
         // Update existing user
         await db.collection('users').updateOne(
@@ -564,7 +564,7 @@ export async function POST(request) {
         };
 
         await db.collection('users').insertOne(user);
-        
+
         // Create index on uid for faster lookups
         await db.collection('users').createIndex({ uid: 1 }, { unique: true });
 
@@ -585,28 +585,28 @@ export async function POST(request) {
       // Input validation
       if (!image) {
         return NextResponse.json(
-          { success: false, error: 'Image is required' }, 
+          { success: false, error: 'Image is required' },
           { status: 400 }
         );
       }
 
       if (!validateImageFormat(image)) {
         return NextResponse.json(
-          { success: false, error: 'Invalid image format' }, 
+          { success: false, error: 'Invalid image format' },
           { status: 400 }
         );
       }
 
       if (location && typeof location !== 'string') {
         return NextResponse.json(
-          { success: false, error: 'Location must be a string' }, 
+          { success: false, error: 'Location must be a string' },
           { status: 400 }
         );
       }
 
       if (areaNotes && typeof areaNotes !== 'string') {
         return NextResponse.json(
-          { success: false, error: 'Area notes must be a string' }, 
+          { success: false, error: 'Area notes must be a string' },
           { status: 400 }
         );
       }
@@ -675,17 +675,53 @@ export async function POST(request) {
       });
     }
 
+    if (path === 'feedback') {
+      const body = await request.json();
+      const { scanId, accuracy, feedback, userId } = body;
+
+      // Validation
+      if (!scanId || accuracy === undefined) {
+        return NextResponse.json(
+          { success: false, error: 'Scan ID and accuracy are required' },
+          { status: 400 }
+        );
+      }
+
+      // Save to database
+      const feedbackDoc = {
+        scanId,
+        accuracy: Number(accuracy),
+        comments: feedback || '',
+        userId: userId || 'anonymous',
+        timestamp: new Date().toISOString(),
+        used_for_training: false // Mark as pending for ML team
+      };
+
+      await db.collection('feedback').insertOne(feedbackDoc);
+
+      // Log low accuracy for review
+      if (accuracy < 50) {
+        console.warn(`⚠️ Low accuracy feedback (${accuracy}%) received for scan: ${scanId}`);
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: 'Feedback recorded',
+        feedbackId: feedbackDoc._id
+      });
+    }
+
     return NextResponse.json(
-      { success: false, error: 'Endpoint not found' }, 
+      { success: false, error: 'Endpoint not found' },
       { status: 404 }
     );
   } catch (error) {
     console.error('POST Error:', error);
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         error: error.message
-      }, 
+      },
       { status: 500 }
     );
   }
@@ -699,29 +735,29 @@ export async function DELETE(request) {
   try {
     if (path.startsWith('audits/')) {
       const auditId = path.split('/')[1];
-      
+
       const { db } = await connectToDatabase();
-      
+
       const result = await db.collection('audits').deleteOne({ id: auditId });
-      
+
       if (result.deletedCount === 0) {
         return NextResponse.json(
-          { success: false, error: 'Audit not found' }, 
+          { success: false, error: 'Audit not found' },
           { status: 404 }
         );
       }
-      
+
       return NextResponse.json({ success: true, message: 'Audit deleted' });
     }
 
     return NextResponse.json(
-      { success: false, error: 'Endpoint not found' }, 
+      { success: false, error: 'Endpoint not found' },
       { status: 404 }
     );
   } catch (error) {
     console.error('DELETE Error:', error);
     return NextResponse.json(
-      { success: false, error: error.message }, 
+      { success: false, error: error.message },
       { status: 500 }
     );
   }

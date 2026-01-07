@@ -16,6 +16,7 @@ import { Toaster } from '@/components/ui/toaster';
 import QRCode from 'qrcode';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAuth } from '@/contexts/AuthContext';
+import FeedbackSection from '@/components/FeedbackSection';
 
 function NewAuditContent() {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -30,13 +31,13 @@ function NewAuditContent() {
   const [certificateData, setCertificateData] = useState(null);
   const [showCertificate, setShowCertificate] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState('');
-  
+
   // Webcam states
   const [showCamera, setShowCamera] = useState(false);
   const [isCameraActive, setIsCameraActive] = useState(false);
   const videoRef = useRef(null);
   const streamRef = useRef(null);
-  
+
   const { toast } = useToast();
   const { getToken } = useAuth();
 
@@ -66,13 +67,13 @@ function NewAuditContent() {
   const startCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { 
+        video: {
           facingMode: 'environment', // Use back camera on mobile
           width: { ideal: 1920 },
           height: { ideal: 1080 }
         }
       });
-      
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         streamRef.current = stream;
@@ -106,22 +107,22 @@ function NewAuditContent() {
       canvas.height = videoRef.current.videoHeight;
       const ctx = canvas.getContext('2d');
       ctx.drawImage(videoRef.current, 0, 0);
-      
+
       canvas.toBlob((blob) => {
         if (blob) {
           const file = new File([blob], 'camera-capture.jpg', { type: 'image/jpeg' });
           setSelectedFile(file);
-          
+
           const reader = new FileReader();
           reader.onloadend = () => {
             setPreview(reader.result);
           };
           reader.readAsDataURL(file);
-          
+
           // Close camera after capture
           setShowCamera(false);
           stopCamera();
-          
+
           toast({
             title: 'Photo captured!',
             description: 'Your image is ready to analyze'
@@ -152,7 +153,7 @@ function NewAuditContent() {
         });
         return;
       }
-      
+
       if (file.size > 10 * 1024 * 1024) {
         toast({
           title: 'File too large',
@@ -240,10 +241,10 @@ function NewAuditContent() {
 
         if (data.success) {
           setProgress(100);
-          
+
           setResult(data.data.result);
           setAuditId(data.data.auditId);
-          
+
           // Generate certificate data if score is good
           if (data.data.result.overallScore >= 70) {
             const certData = {
@@ -265,14 +266,14 @@ function NewAuditContent() {
               certificateNumber: `HYG-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
             };
             setCertificateData(certData);
-            
+
             // Generate QR Code
             generateQRCode(certData);
           }
-          
+
           toast({
             title: 'Analysis complete!',
-            description: data.data.result.overallScore >= 70 
+            description: data.data.result.overallScore >= 70
               ? 'Your hygiene audit has been completed. Certificate available!'
               : 'Your hygiene audit has been completed successfully.'
           });
@@ -407,7 +408,7 @@ function NewAuditContent() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Toaster />
-      
+
       {/* Camera Modal */}
       {showCamera && (
         <div className="fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center p-4">
@@ -431,7 +432,7 @@ function NewAuditContent() {
                 className="w-full h-auto"
                 style={{ maxHeight: '70vh' }}
               />
-              
+
               {/* Camera Controls */}
               <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent">
                 <div className="flex justify-center items-center space-x-4">
@@ -694,7 +695,7 @@ function NewAuditContent() {
                         Grade: {getScoreGrade(result.overallScore)}
                       </div>
                     </div>
-                    
+
                     <div className="grid grid-cols-3 gap-4">
                       <div className="text-center">
                         <div className="text-2xl font-bold text-gray-900">{result.cleanliness}</div>
@@ -721,8 +722,8 @@ function NewAuditContent() {
                             </Button>
                           </DialogTrigger>
                           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                            <CertificateView 
-                              data={certificateData} 
+                            <CertificateView
+                              data={certificateData}
                               qrCodeUrl={qrCodeUrl}
                               onDownload={downloadCertificate}
                               onShare={shareCertificate}
@@ -785,6 +786,7 @@ function NewAuditContent() {
               </Card>
             )}
 
+
             {/* Recommendations */}
             {result.recommendations && result.recommendations.length > 0 && (
               <Card>
@@ -803,6 +805,9 @@ function NewAuditContent() {
                 </CardContent>
               </Card>
             )}
+
+            {/* Feedback Section */}
+            <FeedbackSection scanId={auditId} />
 
             {/* Actions */}
             <div className="flex gap-4 justify-center print:hidden">
@@ -836,7 +841,7 @@ function CertificateView({ data, qrCodeUrl, onDownload, onShare, onPrint }) {
         <DialogTitle>Hygiene Excellence Certificate</DialogTitle>
       </DialogHeader>
 
-      <div 
+      <div
         className="bg-white p-12 rounded-lg border-8 relative overflow-hidden print:border-4"
         style={{ borderColor: colors.primary }}
       >
@@ -870,9 +875,9 @@ function CertificateView({ data, qrCodeUrl, onDownload, onShare, onPrint }) {
               {qrCodeUrl && (
                 <>
                   <div className="bg-white p-3 rounded-lg border-4" style={{ borderColor: colors.primary }}>
-                    <img 
-                      src={qrCodeUrl} 
-                      alt="QR Code" 
+                    <img
+                      src={qrCodeUrl}
+                      alt="QR Code"
                       className="w-32 h-32"
                     />
                   </div>
@@ -889,9 +894,9 @@ function CertificateView({ data, qrCodeUrl, onDownload, onShare, onPrint }) {
                 {data.facilityName}
               </h2>
               <p className="text-lg text-gray-600">has successfully achieved</p>
-              
+
               <div className="py-4">
-                <div 
+                <div
                   className="inline-flex flex-col items-center justify-center w-32 h-32 rounded-full border-8"
                   style={{ borderColor: colors.primary, backgroundColor: colors.secondary }}
                 >

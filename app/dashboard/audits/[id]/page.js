@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, AlertCircle, CheckCircle } from 'lucide-react';
 import { getScoreTextClass, getScoreLabel, getScoreBadgeClass } from '@/lib/colors';
 import { useReducedMotion } from '@/hooks/use-reduced-motion';
+import FeedbackSection from '@/components/FeedbackSection';
 
 export default function AuditDetailPage() {
   const params = useParams();
@@ -295,6 +296,8 @@ export default function AuditDetailPage() {
               </CardContent>
             </Card>
           )}
+
+          <FeedbackSection scanId={params.id} />
         </div>
       </div>
     </div>
