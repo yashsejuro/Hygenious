@@ -16,7 +16,7 @@ if (!GEMINI_API_KEY) {
 
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY || '');
 const geminiModel = genAI.getGenerativeModel({
-  model: 'gemini-1.5-flash',
+  model: 'gemini-2.5-flash',
 });
 
 // Validation functions
@@ -151,7 +151,7 @@ async function analyzeHygieneImage(imageBase64, mimeType = 'image/jpeg') {
   }
 
   try {
-    console.log(`🔍 Analyzing image with Gemini 1.5 Flash (MIME: ${mimeType})...`);
+    console.log(`🔍 Analyzing image with Gemini 2.5 Flash (MIME: ${mimeType})...`);
 
     const imagePart = {
       inlineData: {

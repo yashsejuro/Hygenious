@@ -36,7 +36,7 @@ export default function LoginPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!email || !password) {
       toast({
         title: 'Validation Error',
@@ -50,13 +50,13 @@ export default function LoginPage() {
 
     try {
       const result = await login(email, password);
-      
+
       if (result.success) {
         toast({
           title: 'Login Successful!',
           description: 'Redirecting to dashboard...',
         });
-        
+
         // Redirect to dashboard
         setTimeout(() => {
           router.push('/dashboard');
@@ -107,7 +107,7 @@ export default function LoginPage() {
   return (
     <AnimatedBackground variant="gradient">
       <Toaster />
-      
+
       <div className="min-h-screen flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -115,16 +115,16 @@ export default function LoginPage() {
           transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.5 }}
           className="w-full max-w-md"
         >
-          <GlassCard hover={!prefersReducedMotion} className="overflow-hidden">
+          <GlassCard hover={false} className="overflow-hidden">
             <Card className="border-0 bg-transparent shadow-none">
               <CardHeader className="space-y-1 pb-4">
-                <motion.div 
+                <motion.div
                   className="flex items-center justify-center mb-4"
                   initial={prefersReducedMotion ? { scale: 1 } : { scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={prefersReducedMotion ? {} : { delay: 0.2, type: "spring", stiffness: 200 }}
                 >
-                  <motion.div 
+                  <motion.div
                     className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-3 rounded-2xl"
                     whileHover={prefersReducedMotion ? {} : { rotate: 360, scale: 1.1 }}
                     transition={{ duration: 0.5 }}
@@ -139,10 +139,10 @@ export default function LoginPage() {
                   Sign in to your Hygenious account
                 </CardDescription>
               </CardHeader>
-              
+
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  <motion.div 
+                  <motion.div
                     className="space-y-2"
                     initial={prefersReducedMotion ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
@@ -164,7 +164,7 @@ export default function LoginPage() {
                     </div>
                   </motion.div>
 
-                  <motion.div 
+                  <motion.div
                     className="space-y-2"
                     initial={prefersReducedMotion ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
@@ -206,8 +206,8 @@ export default function LoginPage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.5 }}
                   >
-                    <motion.div 
-                      whileHover={prefersReducedMotion ? {} : { scale: 1.02 }} 
+                    <motion.div
+                      whileHover={prefersReducedMotion ? {} : { scale: 1.02 }}
                       whileTap={prefersReducedMotion ? {} : { scale: 0.98 }}
                     >
                       <Button
@@ -245,8 +245,8 @@ export default function LoginPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.6 }}
                 >
-                  <motion.div 
-                    whileHover={prefersReducedMotion ? {} : { scale: 1.02 }} 
+                  <motion.div
+                    whileHover={prefersReducedMotion ? {} : { scale: 1.02 }}
                     whileTap={prefersReducedMotion ? {} : { scale: 0.98 }}
                   >
                     <Button
@@ -318,23 +318,23 @@ export default function LoginPage() {
               </CardContent>
 
               <CardFooter className="flex flex-col space-y-4 pt-2">
-                <motion.div 
+                <motion.div
                   className="text-sm text-center text-gray-600"
                   initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.7 }}
                 >
                   Don't have an account?{' '}
-                  <Link 
-                    href="/register" 
+                  <Link
+                    href="/register"
                     className="text-blue-600 hover:text-purple-600 font-medium transition-colors relative group"
                   >
                     Sign up
                     <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-purple-600 group-hover:w-full transition-all duration-300"></span>
                   </Link>
                 </motion.div>
-                
-                <motion.div 
+
+                <motion.div
                   className="text-xs text-center text-gray-500"
                   initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0 }}
                   animate={{ opacity: 1 }}

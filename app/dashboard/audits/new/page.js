@@ -17,6 +17,8 @@ import QRCode from 'qrcode';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAuth } from '@/contexts/AuthContext';
 import FeedbackSection from '@/components/FeedbackSection';
+import { motion, AnimatePresence } from 'framer-motion';
+import { GlassCard } from '@/components/ui/animated-background';
 
 function NewAuditContent() {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -208,80 +210,77 @@ function NewAuditContent() {
     setProgress(0);
 
     try {
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64Image = reader.result;
+      // Convert file to Base64 using Promise
+      const base64Image = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(selectedFile);
+      });
 
-        // Get Firebase ID token
-        const firebaseToken = await getToken();
-        if (!firebaseToken) {
-          toast({
-            title: 'Authentication Error',
-            description: 'Please log in to create an audit',
-            variant: 'destructive'
-          });
-          return;
+      // Get Firebase ID token
+      const firebaseToken = await getToken();
+      if (!firebaseToken) {
+        throw new Error('Please log in to create an audit');
+      }
+
+      const response = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${firebaseToken}`
+        },
+        body: JSON.stringify({
+          image: base64Image,
+          location,
+          facilityName,
+          areaNotes
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setProgress(100);
+
+        setResult(data.data.result);
+        setAuditId(data.data.auditId);
+
+        // Generate certificate data if score is good
+        if (data.data.result.overallScore >= 70) {
+          const certData = {
+            facilityName: facilityName,
+            location: location,
+            score: data.data.result.overallScore,
+            grade: getScoreGrade(data.data.result.overallScore),
+            auditId: data.data.auditId,
+            date: new Date().toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
+            }),
+            validUntil: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
+            }),
+            certificateNumber: `HYG-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
+          };
+          setCertificateData(certData);
+
+          // Generate QR Code
+          generateQRCode(certData);
         }
 
-        const response = await fetch('/api/analyze', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${firebaseToken}`
-          },
-          body: JSON.stringify({
-            image: base64Image,
-            location,
-            facilityName,
-            areaNotes
-          })
+        toast({
+          title: 'Analysis complete!',
+          description: data.data.result.overallScore >= 70
+            ? 'Your hygiene audit has been completed. Certificate available!'
+            : 'Your hygiene audit has been completed successfully.'
         });
-
-        const data = await response.json();
-
-        if (data.success) {
-          setProgress(100);
-
-          setResult(data.data.result);
-          setAuditId(data.data.auditId);
-
-          // Generate certificate data if score is good
-          if (data.data.result.overallScore >= 70) {
-            const certData = {
-              facilityName: facilityName,
-              location: location,
-              score: data.data.result.overallScore,
-              grade: getScoreGrade(data.data.result.overallScore),
-              auditId: data.data.auditId,
-              date: new Date().toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-              }),
-              validUntil: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-              }),
-              certificateNumber: `HYG-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
-            };
-            setCertificateData(certData);
-
-            // Generate QR Code
-            generateQRCode(certData);
-          }
-
-          toast({
-            title: 'Analysis complete!',
-            description: data.data.result.overallScore >= 70
-              ? 'Your hygiene audit has been completed. Certificate available!'
-              : 'Your hygiene audit has been completed successfully.'
-          });
-        } else {
-          throw new Error(data.error || 'Analysis failed');
-        }
-      };
-      reader.readAsDataURL(selectedFile);
+      } else {
+        throw new Error(data.error || 'Analysis failed');
+      }
     } catch (error) {
       console.error('Error:', error);
       toast({
@@ -408,6 +407,68 @@ function NewAuditContent() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Toaster />
+
+      <AnimatePresence>
+        {loading && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md p-4"
+          >
+            <motion.div
+              key="loader-card"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: "spring", duration: 0.5 }}
+              className="w-full max-w-md"
+            >
+              <GlassCard hover={false} className="p-8 text-center space-y-6">
+                <div className="relative w-24 h-24 mx-auto">
+                  <motion.div
+                    className="absolute inset-0 border-4 border-blue-500/30 rounded-full"
+                    animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0, 0.5] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                  />
+                  <motion.div
+                    className="absolute inset-0 border-4 border-t-blue-500 rounded-full"
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Brain className="h-10 w-10 text-blue-600 animate-pulse" />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <h3 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
+                    AI Analysis in Progress
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-300">
+                    Analyzing hygiene standards and identifying issues...
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                    <motion.div
+                      className="h-full bg-gradient-to-r from-blue-500 to-purple-500"
+                      initial={{ width: "0%" }}
+                      animate={{ width: `${progress}%` }}
+                      transition={{ duration: 0.5 }}
+                    />
+                  </div>
+                  <div className="flex justify-between text-xs text-gray-500 font-medium">
+                    <span>Processing Image</span>
+                    <span>{Math.round(progress)}%</span>
+                  </div>
+                </div>
+              </GlassCard>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Camera Modal */}
       {showCamera && (
@@ -616,53 +677,7 @@ function NewAuditContent() {
                 </Button>
 
                 {/* Loading State */}
-                {loading && (
-                  <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200">
-                    <CardContent className="pt-6">
-                      <div className="space-y-4">
-                        {/* Animated Icon */}
-                        <div className="flex justify-center">
-                          <div className="relative">
-                            <Brain className="h-16 w-16 text-blue-600 animate-pulse" />
-                            <div className="absolute inset-0 animate-ping">
-                              <Brain className="h-16 w-16 text-blue-400 opacity-75" />
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Main Message */}
-                        <div className="text-center space-y-2">
-                          <h3 className="text-lg font-semibold text-gray-900">
-                            AI Analysis in Progress
-                          </h3>
-                          <p className="text-sm text-gray-600">
-                            Our AI is examining your image for hygiene standards...
-                          </p>
-                        </div>
-
-                        {/* Progress Bar */}
-                        <div className="space-y-2">
-                          <Progress value={progress} className="h-2" />
-                          <p className="text-xs text-center text-gray-500">
-                            {Math.round(progress)}% complete
-                          </p>
-                        </div>
-
-                        {/* Loading Dots */}
-                        <div className="flex justify-center space-x-1">
-                          <div className="h-2 w-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                          <div className="h-2 w-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                          <div className="h-2 w-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                        </div>
-
-                        {/* Info Text */}
-                        <p className="text-xs text-center text-gray-500 pt-2">
-                          This may take 5-15 seconds depending on image size
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
+                {/* Loading State Removed - using overlay */}
               </CardContent>
             </Card>
           </div>
