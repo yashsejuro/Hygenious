@@ -1,5 +1,4 @@
 # 🧼 Hygenious
-
 **AI-powered hygiene audit platform built for trust, accuracy, and real-world business use.**
 
 <p align="center">
@@ -393,4 +392,11 @@ If you find this project interesting:
 
 <p align="center">
   <i>Rebuilding a hackathon idea into a real business | Jan 2026</i>
+  
+
+<p align="center">
+⚠️ Status: MVP / Experimental
+This project is under active development.
+AI-based hygiene analysis is experimental and does not replace
+professional health inspections.
 </p>
