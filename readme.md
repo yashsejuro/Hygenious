@@ -351,7 +351,7 @@ Full Stack Developer & Founder
 
 - GitHub: [@yashsejuro](https://github.com/yashsejuro)
 - Email: yashsejuro.ys@gmail.com
-- LinkedIn: [Your LinkedIn](https://linkedin.com/in/yash-divate)
+- LinkedIn: https://linkedin.com/in/yash-divate
 
 ---
 
