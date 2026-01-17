@@ -4,6 +4,27 @@ import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { getAuth } from 'firebase-admin/auth';
 import admin from 'firebase-admin';
+import { v2 as cloudinary } from "cloudinary";
+
+// cloudinary configuration
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+// upload image to cloudinary
+// upload image to cloudinary
+async function uploadImage(base64Image, auditId) {
+  const result = await cloudinary.uploader.upload(base64Image, {
+    folder: "hygiene_audits",
+    public_id: auditId,
+    overwrite: true,
+    resource_type: "image"
+  });
+
+  return result.secure_url;
+}
 
 // Get your API key from environment variables
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
@@ -233,6 +254,9 @@ async function analyzeHygieneImage(imageBase64, mimeType = 'image/jpeg') {
     };
   }
 }
+
+
+
 
 
 export async function GET(request) {
@@ -641,22 +665,49 @@ export async function POST(request) {
       console.log('Overall Score:', analysisResult.overallScore);
 
       // Get Firebase UID from Authorization header
-      let userId = null;
+      let user = { uid: null, name: 'Anonymous' };
       try {
         const authHeader = request.headers.get('authorization');
         if (authHeader) {
-          userId = await getFirebaseUID(authHeader);
+          const uid = await getFirebaseUID(authHeader);
+          if (uid) {
+            user.uid = uid;
+            // Fetch user details to get name
+            const userDoc = await db.collection('users').findOne({ uid: uid });
+            if (userDoc && userDoc.name) {
+              user.name = userDoc.name;
+            }
+          }
         }
       } catch (error) {
         console.warn('Auth error (continuing without user):', error.message);
       }
 
-      // Create audit object without storing image data
+      const auditId = uuidv4();
+
+      // Upload to Cloudinary
+      let imageUrl = null;
+      try {
+        // Use the original 'image' string which includes the data URI if present, 
+        // or construct it if it was raw base64 (less likely for upload).
+        // Cloudinary handles 'data:image/...' strings well.
+        const uploadStr = image.startsWith('data:') ? image : `data:${mimeType};base64,${image}`;
+        imageUrl = await uploadImage(uploadStr, auditId);
+        console.log('☁️ Image uploaded to Cloudinary:', imageUrl);
+      } catch (uploadError) {
+        console.error('Failed to upload to Cloudinary:', uploadError);
+        // We continue even if upload fails, just without imageUrl
+      }
+
+      // Create audit object matching the requested structure
       const audit = {
-        id: uuidv4(),
-        userId: userId, // Firebase UID
+        id: auditId,
+        auditId: auditId, // Store both if needed, or just id
+        userId: user.uid,
+        userName: user.name,
         location: location || 'Unknown',
         areaNotes: areaNotes || '',
+        imageUrl: imageUrl, // Added imageUrl
         result: analysisResult,
         createdAt: new Date().toISOString(),
         status: 'Completed'
@@ -670,7 +721,8 @@ export async function POST(request) {
         success: true,
         data: {
           auditId: audit.id,
-          result: analysisResult
+          result: analysisResult,
+          imageUrl: imageUrl
         }
       });
     }
