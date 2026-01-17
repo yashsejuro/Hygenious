@@ -6,12 +6,14 @@ import { Textarea } from '@/components/ui/textarea';
 
 
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function FeedbackSection({ scanId }) {
     const [accuracy, setAccuracy] = useState(85);
     const [feedback, setFeedback] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { toast } = useToast();
+    const { user, getToken } = useAuth();
 
     const handleSubmit = async () => {
         if (!scanId) {
@@ -25,15 +27,23 @@ export default function FeedbackSection({ scanId }) {
 
         setIsSubmitting(true);
         try {
+            const token = await getToken();
+            const headers = {
+                'Content-Type': 'application/json',
+            };
+
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
             const response = await fetch('/api/feedback', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: headers,
                 body: JSON.stringify({
                     scanId,
                     accuracy,
                     feedback,
+                    userId: user?.id,
                 }),
             });
 

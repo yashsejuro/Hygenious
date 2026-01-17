@@ -687,12 +687,39 @@ export async function POST(request) {
         );
       }
 
+      // Resolve User ID and Name
+      let finalUserId = userId || 'anonymous';
+      let finalUserName = 'Anonymous';
+
+      try {
+        // 1. Try to get UID from token (most secure)
+        const authHeader = request.headers.get('authorization');
+        if (authHeader) {
+          const tokenUid = await getFirebaseUID(authHeader);
+          if (tokenUid) {
+            finalUserId = tokenUid;
+          }
+        }
+
+        // 2. Look up user details in DB if we have a valid ID
+        if (finalUserId !== 'anonymous') {
+          const user = await db.collection('users').findOne({ uid: finalUserId });
+          if (user && user.name) {
+            finalUserName = user.name;
+          }
+        }
+      } catch (authError) {
+        console.warn('Feedback auth resolution failed:', authError.message);
+        // Fallback to anonymous/provided ID is already set
+      }
+
       // Save to database
       const feedbackDoc = {
         scanId,
         accuracy: Number(accuracy),
         comments: feedback || '',
-        userId: userId || 'anonymous',
+        userId: finalUserId,
+        userName: finalUserName, // <--- Now storing the name!
         timestamp: new Date().toISOString(),
         used_for_training: false // Mark as pending for ML team
       };
