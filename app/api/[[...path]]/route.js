@@ -5,6 +5,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { getAuth } from 'firebase-admin/auth';
 import admin from 'firebase-admin';
 import { v2 as cloudinary } from "cloudinary";
+import { hasPermission } from '@/lib/rbac';
 
 // cloudinary configuration
 cloudinary.config({
@@ -265,18 +266,78 @@ export async function GET(request) {
   try {
     const { db } = await connectToDatabase();
 
-    if (path === 'audits') {
-      const audits = await db.collection('audits')
-        .find({})
-        .sort({ createdAt: -1 })
-        .limit(100)
-        .toArray();
+    // List All Users (Admin Only)
+    if (path === 'users' && request.method === 'GET') {
+      // 1. Authenticate
+      const authHeader = request.headers.get('authorization');
+      if (!authHeader) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-      return NextResponse.json({
-        success: true,
-        data: audits,
-        count: audits.length
-      });
+      const { db } = await connectToDatabase();
+
+      // 2. Check Admin Role
+      try {
+        const uid = await getFirebaseUID(authHeader);
+        const currentUser = await db.collection('users').findOne({ uid });
+
+        if (!currentUser || currentUser.role !== 'admin') {
+          return NextResponse.json({ error: 'Forbidden: Admins only' }, { status: 403 });
+        }
+      } catch (e) {
+        return NextResponse.json({ error: 'Invalid Token' }, { status: 401 });
+      }
+
+      // 3. Fetch Users (Scoped to Organization)
+      // If the user has no organizationId (legacy), we might show all (migrating) or none. 
+      // For now, let's assume we want to match organizationId if it exists.
+
+      const query = {};
+      if (currentUser.organizationId) {
+        query.organizationId = currentUser.organizationId;
+      } else {
+        // Fallback for legacy admin: maybe show only themselves or nothing to force update
+        // Let's show themselves so it doesn't break
+        query.uid = uid;
+      }
+
+      const users = await db.collection('users').find(query, { projection: { password: 0 } }).toArray();
+      return NextResponse.json({ success: true, data: users });
+    }
+
+    if (path === 'audits') {
+      try {
+        const authHeader = request.headers.get('authorization');
+        // If no auth header, maybe return empty list or 401. 
+        // Current frontend might not send header for public page? No, dashboard is protected.
+        // Let's enforce auth.
+
+        let query = {};
+        if (authHeader) {
+          const uid = await getFirebaseUID(authHeader);
+          const currentUser = await db.collection('users').findOne({ uid });
+
+          if (currentUser && currentUser.organizationId) {
+            query.organizationId = currentUser.organizationId;
+          } else {
+            // Legacy fallback: Show only their own audits
+            query.userId = uid;
+          }
+        }
+
+        const audits = await db.collection('audits')
+          .find(query)
+          .sort({ createdAt: -1 })
+          .limit(100)
+          .toArray();
+
+        return NextResponse.json({
+          success: true,
+          data: audits,
+          count: audits.length
+        });
+      } catch (e) {
+        // If auth fails, return empty or error
+        return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+      }
     }
 
     if (path.startsWith('audits/')) {
@@ -582,6 +643,12 @@ export async function POST(request) {
           name: name || '',
           companyName: companyName || null,
           emailVerified: emailVerified || false,
+
+          // SaaS Defaults
+          role: 'admin', // Everyone is an admin of their own org by default
+          plan: 'free',
+          organizationId: uid, // Self-hosted organization
+
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
@@ -664,17 +731,18 @@ export async function POST(request) {
       console.log('Overall Score:', analysisResult.overallScore);
 
       // Get Firebase UID from Authorization header
-      let user = { uid: null, name: 'Anonymous' };
+      let user = { uid: null, name: 'Anonymous', organizationId: null };
       try {
         const authHeader = request.headers.get('authorization');
         if (authHeader) {
           const uid = await getFirebaseUID(authHeader);
           if (uid) {
             user.uid = uid;
-            // Fetch user details to get name
+            // Fetch user details to get name AND organizationId
             const userDoc = await db.collection('users').findOne({ uid: uid });
-            if (userDoc && userDoc.name) {
-              user.name = userDoc.name;
+            if (userDoc) {
+              user.name = userDoc.name || 'Anonymous';
+              user.organizationId = userDoc.organizationId; // IMPORTANT: Get org ID
             }
           }
         }
@@ -704,6 +772,7 @@ export async function POST(request) {
         auditId: auditId, // Store both if needed, or just id
         userId: user.uid,
         userName: user.name,
+        organizationId: user.organizationId || user.uid, // Fallback to UID if no Org ID yet (legacy)
         location: location || 'Unknown',
         areaNotes: areaNotes || '',
         imageUrl: imageUrl, // Added imageUrl
@@ -806,15 +875,51 @@ export async function POST(request) {
 }
 
 // (Your DELETE function is perfect and remains unchanged)
+// (Your DELETE function is perfect and remains unchanged)
 export async function DELETE(request) {
   const { pathname } = new URL(request.url);
   const path = pathname.replace('/api/', '');
 
   try {
-    if (path.startsWith('audits/')) {
-      const auditId = path.split('/')[1];
+    const { db } = await connectToDatabase();
 
-      const { db } = await connectToDatabase();
+    // 1. Authenticate & Get User Role
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader) {
+      console.log('❌ DELETE failed: No Auth Header');
+      return NextResponse.json({ success: false, error: 'Unauthorized: No Auth Header' }, { status: 401 });
+    }
+
+    let userRole = 'staff'; // Default role
+    try {
+      const uid = await getFirebaseUID(authHeader);
+      console.log('Start Deletion for UID:', uid);
+
+      const user = await db.collection('users').findOne({ uid });
+      if (user) {
+        console.log('User found in DB. Role:', user.role);
+        if (user.role) userRole = user.role;
+      } else {
+        console.log('❌ User NOT found in DB for UID:', uid);
+      }
+    } catch (authError) {
+      console.error('❌ DELETE Auth Error:', authError);
+      return NextResponse.json({ success: false, error: 'Invalid Token' }, { status: 401 });
+    }
+
+    if (path.startsWith('audits/')) {
+      // 2. Check Permission
+      const canDelete = hasPermission(userRole, 'delete_audit');
+      console.log(`Permission Check: Role=${userRole}, Delete=${canDelete}`);
+
+      if (!canDelete) {
+        return NextResponse.json(
+          { success: false, error: `Forbidden: Role '${userRole}' cannot delete audits.` },
+          { status: 403 }
+        );
+      }
+
+      const auditId = path.split('/')[1];
 
       const result = await db.collection('audits').deleteOne({ id: auditId });
 
@@ -838,5 +943,50 @@ export async function DELETE(request) {
       { success: false, error: error.message },
       { status: 500 }
     );
+  }
+}
+
+export async function PUT(request) {
+  const { pathname } = new URL(request.url);
+  const path = pathname.replace('/api/', '');
+
+  try {
+    const { db } = await connectToDatabase();
+
+    // Update User Role (Admin Only)
+    if (path === 'users/role') {
+      const authHeader = request.headers.get('authorization');
+      if (!authHeader) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+      // 1. Check Admin
+      try {
+        const uid = await getFirebaseUID(authHeader);
+        const currentUser = await db.collection('users').findOne({ uid });
+        if (!currentUser || currentUser.role !== 'admin') {
+          return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        }
+      } catch (e) {
+        return NextResponse.json({ error: 'Invalid Token' }, { status: 401 });
+      }
+
+      // 2. Update Target User
+      const body = await request.json();
+      const { userId, role } = body;
+
+      if (!['admin', 'manager', 'staff'].includes(role)) {
+        return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
+      }
+
+      await db.collection('users').updateOne(
+        { uid: userId },
+        { $set: { role: role, updatedAt: new Date().toISOString() } }
+      );
+
+      return NextResponse.json({ success: true, message: 'Role updated' });
+    }
+
+    return NextResponse.json({ error: 'Endpoint not found' }, { status: 404 });
+  } catch (error) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

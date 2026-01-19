@@ -11,12 +11,12 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { 
-  ClipboardList, 
-  TrendingUp, 
-  AlertTriangle, 
-  MapPin, 
-  Plus, 
+import {
+  ClipboardList,
+  TrendingUp,
+  AlertTriangle,
+  MapPin,
+  Plus,
   ArrowLeft,
   Trophy,
   Medal,
@@ -41,6 +41,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAuth } from '@/contexts/AuthContext';
+import AuditCard from '@/components/AuditCard';
 
 function DashboardContent() {
   const [stats, setStats] = useState(null);
@@ -48,7 +49,7 @@ function DashboardContent() {
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const { toast } = useToast();
-  const { user, logout, token } = useAuth();
+  const { user, logout, getToken } = useAuth();
 
   // Search and Filter States
   const [searchQuery, setSearchQuery] = useState('');
@@ -73,6 +74,7 @@ function DashboardContent() {
 
   const fetchDashboardStats = async () => {
     try {
+      const token = await getToken();
       const response = await fetch('/api/dashboard/stats', {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -126,6 +128,7 @@ function DashboardContent() {
 
   const fetchAllAudits = async () => {
     try {
+      const token = await getToken();
       const response = await fetch('/api/audits', {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -147,6 +150,43 @@ function DashboardContent() {
     }
   };
 
+  // Delete Handler
+  const handleDeleteAudit = async (auditId) => {
+    if (!window.confirm('Are you sure you want to delete this audit?')) return;
+
+    try {
+      const token = await getToken();
+      const response = await fetch(`/api/audits/${auditId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to delete');
+      }
+
+      toast({
+        title: "Audit Deleted",
+        description: "The audit has been removed from the list.",
+      });
+
+      // Optimistic update
+      setFilteredAudits(prev => prev.filter(a => a.id !== auditId));
+      // Optionally refresh stats
+      fetchDashboardStats();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete audit.",
+        variant: "destructive"
+      });
+    }
+  };
+
   // Apply search and filters
   const applyFilters = () => {
     if (!stats?.recentAudits) {
@@ -158,14 +198,14 @@ function DashboardContent() {
 
     // Search filter
     if (searchQuery) {
-      filtered = filtered.filter(audit => 
+      filtered = filtered.filter(audit =>
         audit?.location?.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
     // Location filter
     if (filters.location !== 'all') {
-      filtered = filtered.filter(audit => 
+      filtered = filtered.filter(audit =>
         audit?.location?.toLowerCase() === filters.location.toLowerCase()
       );
     }
@@ -190,7 +230,7 @@ function DashboardContent() {
       filtered = filtered.filter(audit => {
         const auditDate = new Date(audit?.date || Date.now());
         const diffDays = Math.floor((now - auditDate) / (1000 * 60 * 60 * 24));
-        
+
         switch (filters.dateRange) {
           case 'today': return diffDays === 0;
           case 'week': return diffDays <= 7;
@@ -223,6 +263,7 @@ function DashboardContent() {
   const exportToCSV = async () => {
     try {
       // Fetch all audits for export
+      const token = await getToken();
       const response = await fetch('/api/audits', {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -241,7 +282,7 @@ function DashboardContent() {
       }
 
       const data = await response.json();
-      
+
       if (!data || !data.success || !data.data || data.data.length === 0) {
         toast({
           title: 'No data to export',
@@ -288,7 +329,7 @@ function DashboardContent() {
       // Combine headers and rows
       const csvContent = [
         headers.join(','),
-        ...rows.map(row => 
+        ...rows.map(row =>
           row.map(cell => {
             // Escape commas and quotes in cell content
             const cellStr = String(cell);
@@ -304,11 +345,11 @@ function DashboardContent() {
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
       const url = URL.createObjectURL(blob);
-      
+
       link.setAttribute('href', url);
       link.setAttribute('download', `hygiene-audits-${new Date().toISOString().split('T')[0]}.csv`);
       link.style.visibility = 'hidden';
-      
+
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -448,7 +489,7 @@ function DashboardContent() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Toaster />
-      
+
       {/* Header */}
       <header className="bg-white border-b sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4">
@@ -467,10 +508,15 @@ function DashboardContent() {
                 <div className="flex items-center space-x-3 mr-2">
                   <div className="text-right hidden sm:block">
                     <p className="text-sm font-medium">{user.name}</p>
-                    <p className="text-xs text-gray-500">{user.email}</p>
+                    <div className="flex items-center justify-end gap-1">
+                      <p className="text-xs text-gray-500">{user.email}</p>
+                      <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded-full border border-blue-200">
+                        {user.role || 'GUEST'}
+                      </span>
+                    </div>
                   </div>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     size="sm"
                     onClick={logout}
                     className="flex items-center"
@@ -480,8 +526,8 @@ function DashboardContent() {
                   </Button>
                 </div>
               )}
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={exportToCSV}
                 className="hidden sm:flex"
               >
@@ -489,8 +535,16 @@ function DashboardContent() {
                 Export CSV
               </Button>
               <Link href="/dashboard">
-                <Button variant="outline">View History</Button>
+                <Button variant="outline">History</Button>
               </Link>
+              {user?.role === 'admin' && (
+                <Link href="/dashboard/team">
+                  <Button variant="outline">
+                    <Briefcase className="h-4 w-4 mr-2" />
+                    Team
+                  </Button>
+                </Link>
+              )}
               <Link href="/dashboard/audits/new">
                 <Button>
                   <Plus className="h-4 w-4 mr-2" />
@@ -589,8 +643,8 @@ function DashboardContent() {
                   New Audit
                 </Button>
               </Link>
-              <Button 
-                className="w-full" 
+              <Button
+                className="w-full"
                 variant="outline"
                 onClick={exportToCSV}
               >
@@ -742,8 +796,8 @@ function DashboardContent() {
                     {searchQuery && (
                       <Badge variant="secondary">
                         Search: "{searchQuery}"
-                        <X 
-                          className="h-3 w-3 ml-1 cursor-pointer" 
+                        <X
+                          className="h-3 w-3 ml-1 cursor-pointer"
                           onClick={() => setSearchQuery('')}
                         />
                       </Badge>
@@ -751,8 +805,8 @@ function DashboardContent() {
                     {filters.location !== 'all' && (
                       <Badge variant="secondary">
                         Location: {filters.location}
-                        <X 
-                          className="h-3 w-3 ml-1 cursor-pointer" 
+                        <X
+                          className="h-3 w-3 ml-1 cursor-pointer"
                           onClick={() => setFilters({ ...filters, location: 'all' })}
                         />
                       </Badge>
@@ -760,8 +814,8 @@ function DashboardContent() {
                     {filters.scoreRange !== 'all' && (
                       <Badge variant="secondary">
                         Score: {filters.scoreRange}
-                        <X 
-                          className="h-3 w-3 ml-1 cursor-pointer" 
+                        <X
+                          className="h-3 w-3 ml-1 cursor-pointer"
                           onClick={() => setFilters({ ...filters, scoreRange: 'all' })}
                         />
                       </Badge>
@@ -769,8 +823,8 @@ function DashboardContent() {
                     {filters.dateRange !== 'all' && (
                       <Badge variant="secondary">
                         Date: {filters.dateRange}
-                        <X 
-                          className="h-3 w-3 ml-1 cursor-pointer" 
+                        <X
+                          className="h-3 w-3 ml-1 cursor-pointer"
                           onClick={() => setFilters({ ...filters, dateRange: 'all' })}
                         />
                       </Badge>
@@ -802,30 +856,12 @@ function DashboardContent() {
             {filteredAudits.length > 0 ? (
               <div className="space-y-4">
                 {filteredAudits.map((audit) => (
-                  <div key={audit.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors">
-                    <div className="flex-1">
-                      <p className="font-medium">{audit.location}</p>
-                      <p className="text-sm text-gray-600">
-                        {new Date(audit.date).toLocaleDateString('en-US', {
-                          month: 'long',
-                          day: 'numeric',
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </p>
-                    </div>
-                    <div className={`px-4 py-2 rounded-full ${getScoreBgColor(audit.score)} mr-4`}>
-                      <span className={`font-bold ${getScoreColor(audit.score)}`}>
-                        {audit.score}/100
-                      </span>
-                    </div>
-                    <Link href={`/dashboard/audits/${audit.id}`}>
-                      <Button variant="ghost" size="sm">
-                        View
-                      </Button>
-                    </Link>
-                  </div>
+                  <AuditCard
+                    key={audit.id}
+                    audit={audit}
+                    currentUser={user}
+                    onDelete={handleDeleteAudit}
+                  />
                 ))}
               </div>
             ) : (
@@ -833,7 +869,7 @@ function DashboardContent() {
                 <Search className="h-12 w-12 text-gray-300 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">No audits found</h3>
                 <p className="text-gray-600 mb-4">
-                  {activeFilterCount > 0 
+                  {activeFilterCount > 0
                     ? 'Try adjusting your filters or search query'
                     : 'Get started by creating your first audit'}
                 </p>
@@ -877,8 +913,8 @@ function DashboardContent() {
             <Tabs defaultValue="all" className="w-full">
               <TabsList className="grid w-full grid-cols-6 mb-6">
                 {categories.map((category) => (
-                  <TabsTrigger 
-                    key={category.id} 
+                  <TabsTrigger
+                    key={category.id}
                     value={category.id}
                     className="flex items-center space-x-1"
                   >
@@ -905,12 +941,11 @@ function DashboardContent() {
                     {mockRankings[category.id]?.map((facility, index) => (
                       <div
                         key={facility.id}
-                        className={`grid grid-cols-1 md:grid-cols-12 gap-4 p-4 border-2 rounded-lg hover:shadow-md transition-all ${
-                          index === 0 ? 'bg-gradient-to-r from-yellow-50 to-white border-yellow-300' :
+                        className={`grid grid-cols-1 md:grid-cols-12 gap-4 p-4 border-2 rounded-lg hover:shadow-md transition-all ${index === 0 ? 'bg-gradient-to-r from-yellow-50 to-white border-yellow-300' :
                           index === 1 ? 'bg-gradient-to-r from-gray-50 to-white border-gray-300' :
-                          index === 2 ? 'bg-gradient-to-r from-orange-50 to-white border-orange-300' :
-                          'bg-white hover:border-blue-200'
-                        }`}
+                            index === 2 ? 'bg-gradient-to-r from-orange-50 to-white border-orange-300' :
+                              'bg-white hover:border-blue-200'
+                          }`}
                       >
                         {/* Rank */}
                         <div className="col-span-1 flex items-center justify-center md:justify-start">
@@ -963,11 +998,10 @@ function DashboardContent() {
                         <div className="col-span-1 md:col-span-1 flex items-center justify-center">
                           <div className="flex items-center space-x-1">
                             {getTrendIcon(facility.trend)}
-                            <span className={`text-sm font-semibold ${
-                              facility.trend > 0 ? 'text-green-600' :
+                            <span className={`text-sm font-semibold ${facility.trend > 0 ? 'text-green-600' :
                               facility.trend < 0 ? 'text-red-600' :
-                              'text-gray-600'
-                            }`}>
+                                'text-gray-600'
+                              }`}>
                               {facility.trend > 0 ? '+' : ''}{facility.trend}
                             </span>
                           </div>
@@ -1002,8 +1036,8 @@ function DashboardContent() {
                 <div>
                   <h4 className="font-semibold text-blue-900 mb-1">About Rankings</h4>
                   <p className="text-sm text-blue-800">
-                    Rankings are based on average hygiene scores from verified audits. 
-                    Facilities with higher scores and consistent performance rank higher. 
+                    Rankings are based on average hygiene scores from verified audits.
+                    Facilities with higher scores and consistent performance rank higher.
                     Trends show score changes over the last 30 days.
                   </p>
                 </div>
