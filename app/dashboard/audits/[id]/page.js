@@ -146,7 +146,15 @@ export default function AuditDetailPage() {
               <div className="flex flex-col md:flex-row items-center gap-8">
                 <div className="flex-shrink-0">
                   <div className="w-64 h-64 bg-gray-200 rounded-lg shadow-md flex items-center justify-center">
-                    <span className="text-gray-500 text-sm">Image not available</span>
+                    {audit.imageUrl ? (
+                      <img
+                        src={audit.imageUrl}
+                        alt="Audit Location"
+                        className="w-full h-full object-cover rounded-lg"
+                      />
+                    ) : (
+                      <span className="text-gray-500 text-sm">Image not available</span>
+                    )}
                   </div>
                 </div>
                 <div className="flex-1 space-y-6">

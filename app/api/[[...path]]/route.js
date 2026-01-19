@@ -14,7 +14,6 @@ cloudinary.config({
 });
 
 // upload image to cloudinary
-// upload image to cloudinary
 async function uploadImage(base64Image, auditId) {
   const result = await cloudinary.uploader.upload(base64Image, {
     folder: "hygiene_audits",
