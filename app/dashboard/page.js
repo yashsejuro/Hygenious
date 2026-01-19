@@ -537,6 +537,12 @@ function DashboardContent() {
               <Link href="/dashboard">
                 <Button variant="outline">History</Button>
               </Link>
+              <Link href="/dashboard/upgrade">
+                <Button className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 border-0">
+                  <Trophy className="h-4 w-4 mr-2" />
+                  Upgrade Plan
+                </Button>
+              </Link>
               {user?.role === 'admin' && (
                 <Link href="/dashboard/team">
                   <Button variant="outline">

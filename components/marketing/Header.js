@@ -38,6 +38,9 @@ export default function Header() {
                         <Link href="/how-it-works" className="text-gray-600 hover:text-blue-600 transition-colors">
                             How It Works
                         </Link>
+                        <Link href="/dashboard/upgrade" className="text-gray-600 hover:text-blue-600 transition-colors">
+                            Pricing
+                        </Link>
                         <Link href="/benefits" className="text-gray-600 hover:text-blue-600 transition-colors">
                             Benefits
                         </Link>
