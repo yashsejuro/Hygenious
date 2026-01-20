@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Check, Shield, Zap, Building, HelpCircle } from 'lucide-react';
+import { Check, Shield, Zap, Building, HelpCircle, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -115,6 +116,14 @@ export default function UpgradePage() {
 
     return (
         <div className="container mx-auto p-6 max-w-7xl">
+            <div className="mb-6">
+                <Link href="/">
+                    <Button variant="ghost" size="sm">
+                        <ArrowLeft className="h-4 w-4 mr-2" />
+                        Back to Landing Page
+                    </Button>
+                </Link>
+            </div>
             <motion.div
                 className="text-center mb-12 space-y-4"
                 initial={{ opacity: 0, y: -20 }}
@@ -140,8 +149,8 @@ export default function UpgradePage() {
                     <motion.div key={plan.id} variants={itemVariants} className="flex">
                         <Card
                             className={`flex flex-col w-full relative transition-all duration-300 hover:shadow-lg ${plan.recommended
-                                    ? 'border-blue-600 shadow-blue-100 dark:shadow-blue-900/20 scale-105 z-10'
-                                    : 'border-slate-200 dark:border-slate-800'
+                                ? 'border-blue-600 shadow-blue-100 dark:shadow-blue-900/20 scale-105 z-10'
+                                : 'border-slate-200 dark:border-slate-800'
                                 }`}
                         >
                             {plan.recommended && (

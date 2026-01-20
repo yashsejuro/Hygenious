@@ -116,7 +116,12 @@ function DashboardContent() {
 
   const fetchRankings = async () => {
     try {
-      const response = await fetch('/api/dashboard/rankings');
+      const token = await getToken();
+      const response = await fetch('/api/dashboard/rankings', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
       const data = await response.json();
       if (data && data.success && data.data) {
         setRankings(data.data);

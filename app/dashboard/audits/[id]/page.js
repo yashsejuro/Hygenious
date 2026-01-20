@@ -12,6 +12,7 @@ import { ArrowLeft, AlertCircle, CheckCircle } from 'lucide-react';
 import { getScoreTextClass, getScoreLabel, getScoreBadgeClass } from '@/lib/colors';
 import { useReducedMotion } from '@/hooks/use-reduced-motion';
 import FeedbackSection from '@/components/FeedbackSection';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function AuditDetailPage() {
   const params = useParams();
@@ -19,6 +20,7 @@ export default function AuditDetailPage() {
   const [loading, setLoading] = useState(true);
   const [displayScore, setDisplayScore] = useState(0);
   const prefersReducedMotion = useReducedMotion();
+  const { getToken } = useAuth();
 
   useEffect(() => {
     if (params.id) {
@@ -55,7 +57,12 @@ export default function AuditDetailPage() {
 
   const fetchAudit = async () => {
     try {
-      const response = await fetch(`/api/audits/${params.id}`);
+      const token = await getToken();
+      const response = await fetch(`/api/audits/${params.id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       const data = await response.json();
       if (data.success) {
         setAudit(data.data);
