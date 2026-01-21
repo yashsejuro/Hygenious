@@ -221,7 +221,10 @@ async function analyzeHygieneImage(imageBase64, mimeType = 'image/jpeg') {
 
     const result = await geminiModel.generateContent([prompt, imagePart]);
     const response = result.response;
-    const jsonString = response.text();
+    let jsonString = response.text();
+
+    // Clean the response text to remove markdown formatting if present
+    jsonString = jsonString.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
 
     // Parse the JSON string into an object
     const analysisResult = JSON.parse(jsonString);

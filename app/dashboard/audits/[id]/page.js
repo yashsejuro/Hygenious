@@ -8,11 +8,15 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, AlertCircle, CheckCircle } from 'lucide-react';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { ArrowLeft, AlertCircle, CheckCircle, Award } from 'lucide-react';
 import { getScoreTextClass, getScoreLabel, getScoreBadgeClass } from '@/lib/colors';
 import { useReducedMotion } from '@/hooks/use-reduced-motion';
 import FeedbackSection from '@/components/FeedbackSection';
 import { useAuth } from '@/contexts/AuthContext';
+import CertificateView from '@/components/CertificateView';
+import QRCode from 'qrcode';
+import { useToast } from '@/hooks/use-toast';
 
 export default function AuditDetailPage() {
   const params = useParams();
@@ -21,6 +25,112 @@ export default function AuditDetailPage() {
   const [displayScore, setDisplayScore] = useState(0);
   const prefersReducedMotion = useReducedMotion();
   const { getToken } = useAuth();
+  const { toast } = useToast();
+
+  const [showCertificate, setShowCertificate] = useState(false);
+  const [qrCodeUrl, setQrCodeUrl] = useState('');
+  const [certificateData, setCertificateData] = useState(null);
+
+  const getScoreGrade = (score) => {
+    if (score >= 90) return 'A+';
+    if (score >= 85) return 'A';
+    if (score >= 80) return 'B+';
+    if (score >= 70) return 'B';
+    if (score >= 60) return 'C';
+    return 'D';
+  };
+
+  const generateQRCode = async (certData) => {
+    try {
+      const verificationData = {
+        certificateNumber: certData.certificateNumber,
+        facilityName: certData.facilityName,
+        location: certData.location,
+        score: certData.score,
+        grade: certData.grade,
+        date: certData.date,
+        validUntil: certData.validUntil,
+        verifyUrl: `${window.location.origin}/verify/${certData.certificateNumber}`
+      };
+
+      const qrDataUrl = await QRCode.toDataURL(
+        JSON.stringify(verificationData),
+        {
+          width: 200,
+          margin: 2,
+          color: {
+            dark: '#000000',
+            light: '#FFFFFF'
+          }
+        }
+      );
+
+      setQrCodeUrl(qrDataUrl);
+    } catch (error) {
+      console.error('Error generating QR code:', error);
+    }
+  };
+
+  const handleViewCertificate = () => {
+    if (!audit) return;
+
+    if (!certificateData) {
+      const certData = {
+        facilityName: audit.facilityName || 'Facility',
+        location: audit.location,
+        score: audit.result.overallScore,
+        grade: getScoreGrade(audit.result.overallScore),
+        auditId: audit.id,
+        date: new Date(audit.createdAt).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        }),
+        validUntil: new Date(new Date(audit.createdAt).getTime() + 90 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        }),
+        // Use existing certificate number if saved, or generate a deterministic one based on ID
+        certificateNumber: audit.certificateNumber || `HYG-${new Date(audit.createdAt).getTime()}-${audit.id.substring(0, 6).toUpperCase()}`,
+      };
+      setCertificateData(certData);
+      generateQRCode(certData);
+    }
+
+    setShowCertificate(true);
+  };
+
+  const downloadCertificate = () => {
+    toast({
+      title: 'Coming soon',
+      description: 'PDF download is not implemented yet.',
+    });
+  };
+
+  const shareCertificate = async () => {
+    if (certificateData && navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Hygiene Excellence Certificate',
+          text: `${certificateData.facilityName} achieved a hygiene score of ${certificateData.score}/100!`,
+          url: window.location.href // Or a verify URL if available
+        });
+      } catch (error) {
+        console.log('Error sharing:', error);
+      }
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      toast({
+        title: 'Link copied!',
+        description: 'Link copied to clipboard.'
+      });
+    }
+  };
+
+  const printCertificate = () => {
+    window.print();
+  };
 
   useEffect(() => {
     if (params.id) {
@@ -216,6 +326,33 @@ export default function AuditDetailPage() {
                       </motion.div>
                     ))}
                   </div>
+
+                  {audit.result?.overallScore > 80 && (
+                    <div className="pt-6 border-t border-slate-100 flex justify-center">
+                      <Dialog open={showCertificate} onOpenChange={setShowCertificate}>
+                        <DialogTrigger asChild>
+                          <Button
+                            onClick={handleViewCertificate}
+                            className="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-200 transition-all hover:scale-105"
+                          >
+                            <Award className="h-5 w-5 mr-2" />
+                            View Excellence Certificate
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                          {certificateData && (
+                            <CertificateView
+                              data={certificateData}
+                              qrCodeUrl={qrCodeUrl}
+                              onDownload={downloadCertificate}
+                              onShare={shareCertificate}
+                              onPrint={printCertificate}
+                            />
+                          )}
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                  )}
                 </div>
               </div>
             </CardContent>
