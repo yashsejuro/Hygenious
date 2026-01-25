@@ -6,7 +6,7 @@ import { hasPermission } from '@/lib/rbac';
 
 export async function GET(request, { params }) {
     try {
-        const { id: auditId } = params;
+        const { id: auditId } = await params;
         const authHeader = request.headers.get('authorization');
         if (!authHeader) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
@@ -44,7 +44,7 @@ export async function GET(request, { params }) {
 
 export async function DELETE(request, { params }) {
     try {
-        const { id: auditId } = params;
+        const { id: auditId } = await params;
         const authHeader = request.headers.get('authorization');
         if (!authHeader) {
             return NextResponse.json({ success: false, error: 'Unauthorized: No Auth Header' }, { status: 401 });

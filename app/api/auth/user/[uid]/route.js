@@ -4,7 +4,7 @@ import { connectToDatabase } from '@/lib/db';
 
 export async function GET(request, { params }) {
     try {
-        const { uid } = params;
+        const { uid } = await params;
 
         if (!uid) {
             return NextResponse.json(

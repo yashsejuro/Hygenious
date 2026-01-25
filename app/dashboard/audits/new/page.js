@@ -44,21 +44,37 @@ function NewAuditContent() {
   const { toast } = useToast();
   const { getToken } = useAuth();
 
-  // Animate progress while loading
-  useEffect(() => {
-    if (loading) {
-      const interval = setInterval(() => {
-        setProgress((prev) => {
-          if (prev >= 90) return 90;
-          return prev + Math.random() * 10;
-        });
-      }, 500);
+  // Animate progress with phases
+  const [loadingStatus, setLoadingStatus] = useState('Initializing...');
 
-      return () => clearInterval(interval);
+  useEffect(() => {
+    let interval;
+    if (loading) {
+      interval = setInterval(() => {
+        setProgress((prev) => {
+          // Phase 1: Uploading (Fast to 30%)
+          if (loadingStatus === 'Uploading...') {
+            if (prev >= 30) return 30;
+            return prev + 5;
+          }
+          // Phase 2: Analyzing (Medium to 85%)
+          if (loadingStatus === 'Analyzing...') {
+            if (prev >= 85) return 85;
+            return prev + 0.5; // Slow crawl while AI thinks
+          }
+          // Phase 3: Finalizing (Fast to 95%)
+          if (loadingStatus === 'Finalizing...') {
+            if (prev >= 95) return 95;
+            return prev + 2;
+          }
+          return prev;
+        });
+      }, 100);
     } else {
       setProgress(0);
     }
-  }, [loading]);
+    return () => clearInterval(interval);
+  }, [loading, loadingStatus]);
 
   // Cleanup camera on unmount
   useEffect(() => {
@@ -209,9 +225,10 @@ function NewAuditContent() {
     setLoading(true);
     setResult(null);
     setProgress(0);
+    setLoadingStatus('Uploading...');
 
     try {
-      // Convert file to Base64 using Promise
+      // Simulate slightly longer upload feel or wait for real encoding
       const base64Image = await new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onloadend = () => resolve(reader.result);
@@ -219,11 +236,14 @@ function NewAuditContent() {
         reader.readAsDataURL(selectedFile);
       });
 
+      // Artificial short delay to let "Uploading" animation play slightly
+      await new Promise(r => setTimeout(r, 600));
+
+      setLoadingStatus('Analyzing...');
+
       // Get Firebase ID token
       const firebaseToken = await getToken();
-      if (!firebaseToken) {
-        throw new Error('Please log in to create an audit');
-      }
+      if (!firebaseToken) throw new Error('Please log in to create an audit');
 
       const response = await fetch('/api/analyze', {
         method: 'POST',
@@ -242,12 +262,15 @@ function NewAuditContent() {
       const data = await response.json();
 
       if (data.success) {
+        setLoadingStatus('Finalizing...');
         setProgress(100);
+
+        // Wait a moment for the user to see "100%" and "Finalizing"
+        await new Promise(r => setTimeout(r, 800));
 
         setResult(data.data.result);
         setAuditId(data.data.auditId);
 
-        // Generate certificate data if score is good
         if (data.data.result.overallScore >= 70) {
           const certData = {
             facilityName: facilityName,
@@ -255,21 +278,11 @@ function NewAuditContent() {
             score: data.data.result.overallScore,
             grade: getScoreGrade(data.data.result.overallScore),
             auditId: data.data.auditId,
-            date: new Date().toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric'
-            }),
-            validUntil: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric'
-            }),
+            date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+            validUntil: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
             certificateNumber: `HYG-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
           };
           setCertificateData(certData);
-
-          // Generate QR Code
           generateQRCode(certData);
         }
 
@@ -290,7 +303,8 @@ function NewAuditContent() {
         variant: 'destructive'
       });
     } finally {
-      setLoading(false);
+      // Small delay ensuring the transition out is smooth
+      setTimeout(() => setLoading(false), 200);
     }
   };
 
@@ -461,7 +475,7 @@ function NewAuditContent() {
                     />
                   </div>
                   <div className="flex justify-between text-xs text-gray-500 font-medium">
-                    <span>Processing Image</span>
+                    <span>{loadingStatus}</span>
                     <span>{Math.round(progress)}%</span>
                   </div>
                 </div>
