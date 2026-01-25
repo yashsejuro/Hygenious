@@ -4,15 +4,13 @@ const nextConfig = {
   },
   output: 'standalone',
   images: {
-    unoptimized: true,
+    // Enabled image optimization for better performance
+    // unoptimized: true, 
   },
   experimental: {
     // Remove if not using Server Components
-    serverComponentsExternalPackages: ['mongodb'],
-  },
-  onDemandEntries: {
-    maxInactiveAge: 10000,
-    pagesBufferLength: 2,
+    serverComponentsExternalPackages: ['mongodb', 'firebase-admin'],
+    optimizePackageImports: ['lucide-react', 'recharts', '@radix-ui/react-icons', 'date-fns', 'lodash'],
   },
   async headers() {
     return [

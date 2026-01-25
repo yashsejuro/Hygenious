@@ -131,12 +131,19 @@ async function getFirebaseUID(authHeader) {
 const MONGO_URL = process.env.MONGO_URL;
 const DB_NAME = process.env.DB_NAME || 'smart_hygiene_audit';
 
-let cachedClient = null;
-let cachedDb = null;
+/**
+ * Global MongoDB caching to prevent connection exhaustion in development
+ * due to Hot Module Replacement (HMR).
+ */
+let cached = global.mongo;
+
+if (!cached) {
+  cached = global.mongo = { client: null, db: null };
+}
 
 async function connectToDatabase() {
-  if (cachedClient && cachedDb) {
-    return { client: cachedClient, db: cachedDb };
+  if (cached.client && cached.db) {
+    return { client: cached.client, db: cached.db };
   }
 
   if (!MONGO_URL) {
@@ -153,8 +160,8 @@ async function connectToDatabase() {
     console.log('✅ Connected to MongoDB');
 
     const db = client.db(DB_NAME);
-    cachedClient = client;
-    cachedDb = db;
+    cached.client = client;
+    cached.db = db;
 
     return { client, db };
   } catch (error) {
