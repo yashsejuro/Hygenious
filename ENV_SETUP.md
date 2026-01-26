@@ -27,10 +27,18 @@ This application requires certain environment variables to be configured for pro
 
 ### Other Environment Variables
 
-See the `.env.local` file for other required variables:
+**Required:**
 - `MONGO_URL` - MongoDB connection string
 - `DB_NAME` - Database name (default: 'smart_hygiene_audit')
 - `GEMINI_API_KEY` - Google Gemini API key for AI analysis
+- `CLOUDINARY_CLOUD_NAME` - Cloudinary cloud name
+- `CLOUDINARY_API_KEY` - Cloudinary API key
+- `CLOUDINARY_API_SECRET` - Cloudinary API secret
+
+**Optional (Production Optimizations):**
+- `MONGODB_MAX_POOL_SIZE` - Maximum database connections in pool (default: 50)
+- `MONGODB_MIN_POOL_SIZE` - Minimum database connections to maintain (default: 5)
+- `CORS_ORIGINS` - Comma-separated list of allowed CORS origins (required for production, e.g., `https://yourdomain.com`)
 
 ## Security Notes
 

@@ -87,3 +87,4 @@ node_modules/@next/swc-linux-arm64-musl/next-swc.linux-arm64-musl.node
 node_modules/
 
 PROJECT_WALKTHROUGH.md
+PRODUCTION_READINESS_ASSESSMENT.md

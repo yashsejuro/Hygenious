@@ -12,6 +12,13 @@ const nextConfig = {
     serverComponentsExternalPackages: ['mongodb', 'firebase-admin'],
     optimizePackageImports: ['lucide-react', 'recharts', '@radix-ui/react-icons', 'date-fns', 'lodash'],
   },
+  // API route body size limit (10MB for image uploads)
+  api: {
+    bodyParser: {
+      sizeLimit: '10mb',
+    },
+    responseLimit: '10mb',
+  },
   async headers() {
     return [
       {
@@ -20,7 +27,8 @@ const nextConfig = {
           { key: "X-Frame-Options", value: "SAMEORIGIN" },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          { key: "Access-Control-Allow-Origin", value: process.env.CORS_ORIGINS || "*" },
+          // Security: Use specific origins instead of wildcard in production
+          { key: "Access-Control-Allow-Origin", value: process.env.CORS_ORIGINS || (process.env.NODE_ENV === 'production' ? 'https://yourdomain.com' : '*') },
           { key: "Access-Control-Allow-Methods", value: "GET, POST, PUT, DELETE, OPTIONS" },
           { key: "Access-Control-Allow-Headers", value: "Content-Type, Authorization" },
         ],
