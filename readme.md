@@ -15,11 +15,14 @@
 
 ## 🚀 About
 
-**Hygenious** is an AI-driven hygiene intelligence platform that analyzes real-world images of spaces such as kitchens, restrooms, and dining areas to generate objective cleanliness scores and actionable insights.
+Hygenious turns a smartphone into an AI-powered hygiene inspector.
 
-Originally developed during **Hack Karnataka 2025** with Team Sandbox, I'm now rebuilding this project from the ground up with full ownership of the backend, APIs, and infrastructure—designed for real business deployment.
+Take a photo of a kitchen, restroom, or dining area — get an instant,
+objective hygiene score with visual proof and actionable insights.
 
-The system focuses on **consistency, explainability, and accuracy**, making it suitable for restaurants, hostels, clinics, and shared spaces—not just demos or hackathons.
+Built for restaurants, cafés, hostels, and shared spaces that care
+about cleanliness, trust, and consistency.
+
 
 ---
 
@@ -40,7 +43,11 @@ The system focuses on **consistency, explainability, and accuracy**, making it s
 - Human-in-the-loop feedback for continuous improvement
 
 ---
+##🔗 Live demo: Coming soon  
+📱 Mobile-first (PWA-ready)
 
+--- 
+## 🔬 Technical & AI Architecture (for developers)
 ## ✨ Core Features (MVP)
 
 | Feature | Description |
@@ -115,19 +122,6 @@ This rule-based approach ensures:
 - **Rule-Based Scoring:** Transparent penalty system
 - **Human-in-the-Loop:** Manager corrections become training data
 
-### Models Being Evaluated
-| Model | Purpose | Accuracy Target |
-|-------|---------|----------------|
-| **YOLOv8** | Object detection (trash, spills, clutter) | 85%+ |
-| **MobileNetV3** | Image classification (clean/medium/dirty) | 80%+ |
-| **Custom CNN** | Stain/spill detection | 75%+ |
-
-### Training Strategy
-- Start with **pretrained models** (YOLO, MobileNet)
-- Fine-tune on **real customer data** (India-specific environments)
-- Collect corrections via **feedback loop**
-- Retrain monthly with **validated labels**
-
 ---
 
 ## 🛠️ Tech Stack
@@ -142,12 +136,6 @@ This rule-based approach ensures:
 - **React / Next.js** - Modern UI framework
 - **Tailwind CSS** - Utility-first styling
 - **ShadCN UI** - Component library
-
-### AI/ML Pipeline
-- **Python + FastAPI** - Model serving
-- **TensorFlow / PyTorch** - Model training
-- **OpenCV** - Image preprocessing
-- **YOLOv8** - Object detection
 
 ### Deployment
 - **Render / Railway** - Backend hosting
@@ -285,27 +273,7 @@ GET /api/scans
 
 ---
 
-## 📈 Project Status
 
-### ✅ Completed
-- [x] Backend API structure
-- [x] Mock hygiene scoring
-- [x] Error handling
-- [x] CORS configuration
-- [x] Health check endpoint
-
-### 🚧 In Progress
-- [ ] Image upload (Cloudinary integration)
-- [ ] MongoDB connection
-- [ ] Real AI detection pipeline
-
-### 📋 Planned
-- [ ] Frontend UI
-- [ ] User authentication
-- [ ] Real-time dashboard
-- [ ] QR code generation
-- [ ] Certificate system
-- [ ] Deployment (Render/Vercel)
 
 ---
 
@@ -317,12 +285,7 @@ Hygenious aims to become a **trusted hygiene intelligence layer** for:
 - 🏥 **Clinics & Care Facilities** - Compliance documentation
 - 🏢 **Shared Workspaces** - Regular hygiene monitoring
 
-### Monetization Strategy
-- **Freemium Model:** 10 free scans/month
-- **Starter Plan:** ₹499/month (50 scans)
-- **Pro Plan:** ₹2,999/month (Unlimited scans + analytics)
-- **Enterprise:** Custom pricing for chains
-
+### Monetization Strategy(Planned)
 ---
 
 ## 🤝 Contributing
@@ -359,20 +322,6 @@ Full Stack Developer & Founder
 
 - **Hack Karnataka 2025** - For the initial inspiration and hackathon experience
 - **Team Sandbox** - Original hackathon team members
-- **TensorFlow.js** - Browser-based ML inference
-- **YOLOv8** - Object detection framework
-- **OpenCV** - Image processing tools
-
----
-
-## 🌟 Project Journey
-
-This project started as a **hackathon idea** but is being rebuilt into a **real business product**:
-
-✅ **Phase 1 (Hackathon):** Proof of concept with team  
-✅ **Phase 2 (Current):** Solo rebuild with full ownership  
-🚧 **Phase 3 (Next):** MVP with real AI + paying customers  
-📋 **Phase 4 (Goal):** Scalable SaaS platform  
 
 ---
 
@@ -391,7 +340,7 @@ If you find this project interesting:
 </p>
 
 <p align="center">
-  <i>Rebuilding a hackathon idea into a real business | Jan 2026</i>
+  <i>Rebuilding a hackathon idea  | Jan 2026</i>
   
 
 <p align="center">
