@@ -27,8 +27,25 @@ export default function HomePage() {
 
     return (
         <>
-            {/* Hero Section */}
-            <section className="container mx-auto px-4 py-20 text-center">
+            {/* Hero Section (landing page only) */}
+            {/* Wrapper section is relative with overflow hidden so floating icons stay within the hero */}
+            <section className="relative overflow-hidden container mx-auto px-4 py-20 text-center marketing-hero">
+                {/* Subtle floating background icons – customize emojis/positions/animation speeds in globals.css */}
+                <div className="marketing-hero-floating-icons pointer-events-none" aria-hidden="true">
+                    {/* 🧠 AI Brain - top left */}
+                    <span className="marketing-hero-icon marketing-hero-icon-1">🧠</span>
+                    {/* 🛡️ Health Shield - top right */}
+                    <span className="marketing-hero-icon marketing-hero-icon-2">🛡️</span>
+                    {/* 📊 Analytics Chart - middle left */}
+                    <span className="marketing-hero-icon marketing-hero-icon-3">📊</span>
+                    {/* 🔬 Microscope - middle right */}
+                    <span className="marketing-hero-icon marketing-hero-icon-4">🔬</span>
+                    {/* ✨ Sparkles - bottom left */}
+                    <span className="marketing-hero-icon marketing-hero-icon-5">✨</span>
+                    {/* 🎯 Target - bottom right */}
+                    <span className="marketing-hero-icon marketing-hero-icon-6">🎯</span>
+                </div>
+
                 <motion.div
                     className="max-w-4xl mx-auto"
                     initial="hidden"

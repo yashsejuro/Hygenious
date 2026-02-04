@@ -139,3 +139,95 @@ code {
     @apply bg-background text-foreground;
     }
 }
+
+/* Marketing landing hero floating icons
+   - Icons are subtle, blurred, and float up/down with slight rotation
+   - Styles are scoped via the `marketing-hero` / `marketing-hero-*` class names and only used on the landing page hero
+*/
+.marketing-hero {
+    position: relative;
+    overflow: hidden;
+}
+
+.marketing-hero-floating-icons {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.marketing-hero-icon {
+    position: absolute;
+    font-size: 2.5rem;
+    /* Base opacity for desktop – increase/decrease to adjust visibility */
+    opacity: 1;
+    filter: blur(0.5px);
+    animation-name: marketing-hero-float;
+    animation-timing-function: ease-in-out;
+    animation-iteration-count: infinite;
+    will-change: transform;
+}
+
+/* Individual icon positioning + varied timing (durations 7–9s, staggered delays) */
+.marketing-hero-icon-1 {
+    top: 8%;
+    left: 6%;
+    animation-duration: 8s;
+    animation-delay: 0s;
+}
+
+.marketing-hero-icon-2 {
+    top: 12%;
+    right: 8%;
+    animation-duration: 7s;
+    animation-delay: 1.5s;
+}
+
+.marketing-hero-icon-3 {
+    top: 40%;
+    left: 4%;
+    animation-duration: 9s;
+    animation-delay: 2s;
+}
+
+.marketing-hero-icon-4 {
+    top: 45%;
+    right: 5%;
+    animation-duration: 8.5s;
+    animation-delay: 3s;
+}
+
+.marketing-hero-icon-5 {
+    bottom: 10%;
+    left: 18%;
+    animation-duration: 7.5s;
+    animation-delay: 4s;
+}
+
+.marketing-hero-icon-6 {
+    bottom: 8%;
+    right: 14%;
+    animation-duration: 8.8s;
+    animation-delay: 2.8s;
+}
+
+@keyframes marketing-hero-float {
+    0% {
+        transform: translateY(0) rotate(0deg);
+    }
+    50% {
+        transform: translateY(-30px) rotate(3deg);
+    }
+    100% {
+        transform: translateY(0) rotate(0deg);
+    }
+}
+
+/* Mobile tweaks – make icons smaller and even more subtle on small screens */
+@media (max-width: 640px) {
+    .marketing-hero-icon {
+        font-size: 2rem;
+        /* Slightly lower opacity on mobile to avoid visual clutter */
+        opacity: 0.12;
+    }
+}

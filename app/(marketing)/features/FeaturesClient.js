@@ -82,7 +82,8 @@ export default function FeaturesClient() {
         <motion.section
             className="container mx-auto px-4 py-20"
             initial="hidden"
-            animate="show"
+            whileInView="show"
+            viewport={{ once: true, margin: '-100px' }}
             variants={containerVariants}
         >
             <motion.div variants={itemVariants} className="text-center mb-16">
