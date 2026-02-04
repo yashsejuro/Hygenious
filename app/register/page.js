@@ -133,6 +133,17 @@ export default function RegisterPage() {
   return (
     <AnimatedBackground variant="gradient">
       <Toaster />
+
+      <div className="absolute top-6 left-6 z-20">
+        <Button
+          type="button"
+          variant="outline"
+          className="bg-white/70 backdrop-blur-sm border-white/40 hover:bg-white/90 transition-all text-sm"
+          onClick={() => router.push('/')}
+        >
+          Back to landing
+        </Button>
+      </div>
       
       <motion.div 
         className="relative z-10 flex items-center justify-center min-h-screen p-4"
@@ -142,10 +153,9 @@ export default function RegisterPage() {
       >
         <motion.div
           variants={cardVariants}
-          whileHover={prefersReducedMotion ? {} : "hover"}
           className="w-full max-w-md"
         >
-          <GlassCard hover={!prefersReducedMotion} className="overflow-hidden">
+          <GlassCard hover={false} className="overflow-hidden">
             <Card className="border-0 bg-transparent shadow-none">
               <CardHeader className="space-y-4 text-center pb-8">
                 <motion.div 
