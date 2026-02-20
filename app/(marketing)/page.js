@@ -163,6 +163,64 @@ const CustomCursor = () => {
     );
 };
 
+const HorizontalScrollGallery = () => {
+    const targetRef = useRef(null);
+    const { scrollYProgress } = useScroll({ target: targetRef, offset: ["start start", "end end"] });
+
+    const x = useTransform(scrollYProgress, [0, 1], ["0%", "-65%"]);
+
+    const y1 = useTransform(scrollYProgress, [0, 1], [0, 200]);
+    const y2 = useTransform(scrollYProgress, [0, 1], [0, -200]);
+
+    return (
+        <section ref={targetRef} className="relative h-[300vh] bg-slate-950 text-white overflow-hidden">
+            <motion.div style={{ y: y1 }} className="absolute top-[20%] right-[10%] w-[40vw] h-[40vw] bg-hygenious-teal/10 rounded-full blur-[100px] pointer-events-none" />
+            <motion.div style={{ y: y2 }} className="absolute bottom-[20%] left-[10%] w-[30vw] h-[30vw] bg-hygenious-cyan/10 rounded-full blur-[100px] pointer-events-none" />
+
+            <div className="sticky top-0 flex h-screen items-center">
+                <motion.div style={{ x }} className="flex gap-10 md:gap-24 px-10 md:px-32 w-max items-center">
+
+                    <div className="flex-shrink-0 w-[85vw] md:w-[50vw] pr-10">
+                        <span className="text-hygenious-teal font-mono uppercase tracking-widest text-sm mb-4 block">Spatial Analysis</span>
+                        <h2 className="text-5xl md:text-[8vw] font-black leading-[0.9] tracking-tighter mix-blend-difference mb-8">
+                            BEYOND<br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-hygenious-teal to-hygenious-cyan">VISION.</span>
+                        </h2>
+                        <p className="text-xl md:text-2xl text-slate-400 font-light max-w-xl">
+                            Move past static checklists. Enter an immersive ecosystem that maps patterns and predicts non-compliance using temporal analytics.
+                        </p>
+                    </div>
+
+                    {[
+                        { title: "Continuous Watch", desc: "24/7 automated spatial tracking." },
+                        { title: "Surface Mapping", desc: "Detailed breakdown of contamination zones." },
+                        { title: "Predictive Analytics", desc: "Forecast issues before they occur." },
+                    ].map((item, idx) => (
+                        <div key={idx} className="flex-shrink-0 w-[75vw] md:w-[35vw] h-[55vh] md:h-[65vh] rounded-[32px] overflow-hidden relative group border border-white/5 bg-slate-900 shadow-2xl perspective-1000">
+                            <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-10 opacity-70 transition-opacity group-hover:opacity-90"></div>
+
+                            <div className="w-full h-full overflow-hidden">
+                                <img
+                                    src="/images/hero-image.png"
+                                    alt={item.title}
+                                    className="w-full h-full object-cover opacity-60 mix-blend-luminosity group-hover:mix-blend-normal group-hover:scale-110 transition-all duration-[1.5s] ease-out"
+                                />
+                            </div>
+
+                            <div className="absolute bottom-10 left-10 z-20 transform group-hover:-translate-y-4 transition-transform duration-500">
+                                <div className="text-hygenious-teal font-mono text-sm mb-3">0{idx + 1}</div>
+                                <h3 className="text-3xl md:text-4xl font-bold text-white mb-2">{item.title}</h3>
+                                <p className="text-slate-300 text-lg">{item.desc}</p>
+                            </div>
+                        </div>
+                    ))}
+
+                    <div className="flex-shrink-0 w-[30vw]"></div>
+                </motion.div>
+            </div>
+        </section>
+    );
+};
+
 export default function HomePage() {
     const { isAuthenticated } = useAuth();
 
@@ -518,14 +576,15 @@ export default function HomePage() {
             </section>
 
             {/* MARQUEE STATS SECTION */}
-            <section className="py-20 bg-slate-50 border-y border-slate-100 overflow-hidden">
-                <div
+            <section className="py-20 bg-slate-50 border-y border-slate-100 overflow-hidden flex">
+                <motion.div
                     className="flex items-center whitespace-nowrap w-max"
-                    style={{ animation: 'scroll 40s linear infinite' }}
+                    animate={{ x: ["0%", "-50%"] }}
+                    transition={{ ease: "linear", duration: 30, repeat: Infinity }}
                 >
-                    {/* Double the content for continuous scroll */}
-                    {[1, 2].map((group) => (
-                        <div key={group} className="flex gap-20 px-10 items-center">
+                    {/* Quadruple the content to ensure it never detaches mid-screen */}
+                    {[...Array(4)].map((_, idx) => (
+                        <div key={idx} className="flex gap-20 px-10 items-center">
                             <div className="flex flex-col items-center"><span className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-success">Real-Time</span><span className="text-slate-500 text-sm mt-1">Instant Results</span></div>
                             <div className="w-1 h-1 bg-slate-300 rounded-full"></div>
                             <div className="flex flex-col items-center"><span className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-cyan-500">99.2%</span><span className="text-slate-500 text-sm mt-1">AI Accuracy</span></div>
@@ -536,8 +595,11 @@ export default function HomePage() {
                             <div className="w-1 h-1 bg-slate-300 rounded-full"></div>
                         </div>
                     ))}
-                </div>
+                </motion.div>
             </section>
+
+            {/* HORIZONTAL SCROLL LUSION STYLE */}
+            <HorizontalScrollGallery />
 
             {/* CTA SECTION */}
             <section className="relative py-32 px-6 overflow-hidden">
