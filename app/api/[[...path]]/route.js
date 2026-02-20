@@ -128,8 +128,6 @@ async function getFirebaseUID(authHeader) {
   }
 }
 
-// Use centralized database connection from lib/db.js
-import { connectToDatabase } from '@/lib/db';
 
 /**
  * Analyze hygiene image using Google Gemini 1.5 Flash
@@ -775,39 +773,46 @@ export async function POST(request) {
         console.warn('Auth error (continuing without user):', error.message);
       }
 
+      // If the analysis failed significantly (e.g. Gemini error handling fallback returned overallScore 0)
+      // do not save it to Cloudinary or the database, just return the failure to the client.
+      if (analysisResult.overallScore === 0 && analysisResult.assessment.includes("failed")) {
+        console.warn('⚠️ Analysis failed, skipping Cloudinary upload and database save.');
+        return NextResponse.json({
+          success: false, // indicating an issue occurred
+          data: {
+            result: analysisResult
+          }
+        });
+      }
+
       const auditId = uuidv4();
 
       // Upload to Cloudinary
       let imageUrl = null;
       try {
-        // Use the original 'image' string which includes the data URI if present, 
-        // or construct it if it was raw base64 (less likely for upload).
-        // Cloudinary handles 'data:image/...' strings well.
         const uploadStr = image.startsWith('data:') ? image : `data:${mimeType};base64,${image}`;
         imageUrl = await uploadImage(uploadStr, auditId);
         console.log('☁️ Image uploaded to Cloudinary:', imageUrl);
       } catch (uploadError) {
         console.error('Failed to upload to Cloudinary:', uploadError);
-        // We continue even if upload fails, just without imageUrl
       }
 
       // Create audit object matching the requested structure
       const audit = {
         id: auditId,
-        auditId: auditId, // Store both if needed, or just id
+        auditId: auditId,
         userId: user.uid,
         userName: user.name,
-        organizationId: user.organizationId || user.uid, // Fallback to UID if no Org ID yet (legacy)
+        organizationId: user.organizationId || user.uid,
         location: location || 'Unknown',
         areaNotes: areaNotes || '',
-        imageUrl: imageUrl, // Added imageUrl
+        imageUrl: imageUrl,
         result: analysisResult,
         createdAt: new Date().toISOString(),
         status: 'Completed'
       };
 
       await db.collection('audits').insertOne(audit);
-
       console.log('💾 Audit saved to database:', audit.id);
 
       return NextResponse.json({
