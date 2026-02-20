@@ -1,24 +1,15 @@
 const nextConfig = {
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
+
   output: 'standalone',
   images: {
     // Enabled image optimization for better performance
     // unoptimized: true, 
   },
+  serverExternalPackages: ['mongodb', 'firebase-admin'],
   experimental: {
-    // Remove if not using Server Components
-    serverComponentsExternalPackages: ['mongodb', 'firebase-admin'],
     optimizePackageImports: ['lucide-react', 'recharts', '@radix-ui/react-icons', 'date-fns', 'lodash'],
   },
-  // API route body size limit (10MB for image uploads)
-  api: {
-    bodyParser: {
-      sizeLimit: '10mb',
-    },
-    responseLimit: '10mb',
-  },
+
   async headers() {
     return [
       {
