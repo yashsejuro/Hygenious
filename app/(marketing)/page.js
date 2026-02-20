@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
-import { Camera, ArrowRight, Sparkles, ShieldCheck, Play, ScanLine, Activity, CheckCircle2, QrCode, TrendingUp, Download, Share2, UploadCloud } from 'lucide-react';
+import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useSpring, useMotionTemplate } from 'framer-motion';
+import { Camera, ArrowRight, Sparkles, ShieldCheck, Play, ScanLine, Activity, CheckCircle2, QrCode, TrendingUp, Download, Share2, UploadCloud, MoveRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -37,9 +37,67 @@ const Magnetic = ({ children }) => {
     );
 };
 
+// 1. LUSION STYLE TILT CARD
+const TiltCard = ({ children, className }) => {
+    const ref = useRef(null);
+    const x = useMotionValue(0);
+    const y = useMotionValue(0);
+
+    const mouseXSpring = useSpring(x);
+    const mouseYSpring = useSpring(y);
+
+    // Convert mouse position to rotation values (max 10 degrees)
+    const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ["7deg", "-7deg"]);
+    const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-7deg", "7deg"]);
+
+    // Dynamic glare effect based on mouse
+    const glareX = useTransform(mouseXSpring, [-0.5, 0.5], ["100%", "0%"]);
+    const glareY = useTransform(mouseYSpring, [-0.5, 0.5], ["100%", "0%"]);
+    const glareBackground = useMotionTemplate`radial-gradient(circle at ${glareX} ${glareY}, rgba(255,255,255,0.4) 0%, transparent 60%)`;
+
+    const handleMouseMove = (e) => {
+        if (!ref.current) return;
+        const rect = ref.current.getBoundingClientRect();
+        const width = rect.width;
+        const height = rect.height;
+        // Get mouse position relative to card center from -0.5 to 0.5
+        const mouseX = (e.clientX - rect.left) / width - 0.5;
+        const mouseY = (e.clientY - rect.top) / height - 0.5;
+
+        x.set(mouseX);
+        y.set(mouseY);
+    };
+
+    const handleMouseLeave = () => {
+        x.set(0);
+        y.set(0);
+    };
+
+    return (
+        <motion.div
+            ref={ref}
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
+            style={{
+                rotateX,
+                rotateY,
+                transformStyle: "preserve-3d",
+            }}
+            className={`relative group perspective-1000 ${className}`}
+        >
+            <motion.div
+                className="absolute inset-0 z-50 pointer-events-none rounded-[24px]"
+                style={{ background: glareBackground }}
+            />
+            {children}
+        </motion.div>
+    );
+};
+
 const CustomCursor = () => {
     const [mousePosition, setMousePosition] = useState({ x: -100, y: -100 });
     const [isHovering, setIsHovering] = useState(false);
+    const { scrollYProgress } = useScroll();
 
     useEffect(() => {
         const updateMousePosition = (e) => {
@@ -51,7 +109,6 @@ const CustomCursor = () => {
             const isClickable = ['button', 'a', 'input', 'select', 'textarea'].includes(tag) || e.target.closest('button') || e.target.closest('a') || e.target.closest('.magnetic');
             setIsHovering(!!isClickable);
         };
-
         window.addEventListener('mousemove', updateMousePosition);
         window.addEventListener('mouseover', handleMouseOver);
 
@@ -61,41 +118,66 @@ const CustomCursor = () => {
         };
     }, []);
 
-    const variants = {
-        default: {
-            x: mousePosition.x - 16,
-            y: mousePosition.y - 16,
-            height: 32,
-            width: 32,
-            backgroundColor: 'transparent',
-            border: '2px solid rgba(0, 212, 170, 0.8)'
-        },
-        hover: {
-            x: mousePosition.x - 40,
-            y: mousePosition.y - 40,
-            height: 80,
-            width: 80,
-            backgroundColor: 'rgba(0, 212, 170, 0.15)',
-            border: '2px solid rgba(0, 212, 170, 0.4)',
-            backdropFilter: 'blur(4px)'
-        }
-    };
+    const size = isHovering ? 80 : 32;
+    const offset = size / 2;
 
     return (
         <motion.div
-            className="fixed top-0 left-0 rounded-full pointer-events-none z-[9999] hidden md:block"
-            variants={variants}
-            animate={isHovering ? "hover" : "default"}
+            className="fixed top-0 left-0 pointer-events-none z-[9999] hidden md:flex items-center justify-center mix-blend-difference"
+            animate={{
+                x: mousePosition.x - offset,
+                y: mousePosition.y - offset,
+                width: size,
+                height: size,
+            }}
             transition={{ type: "spring", stiffness: 400, damping: 28, mass: 0.5 }}
-        />
+        >
+            <svg width={size} height={size} viewBox="0 0 100 100" className="absolute inset-0 -rotate-90">
+                <circle
+                    cx="50"
+                    cy="50"
+                    r="48"
+                    fill={isHovering ? "rgba(255,255,255,1)" : "none"}
+                    stroke={isHovering ? "none" : "rgba(255,255,255,0.3)"}
+                    strokeWidth="4"
+                    className="transition-all duration-300"
+                />
+                {!isHovering && (
+                    <motion.circle
+                        cx="50"
+                        cy="50"
+                        r="48"
+                        fill="none"
+                        stroke="#00D4AA"
+                        strokeWidth="4"
+                        strokeDasharray="301"
+                        style={{ pathLength: scrollYProgress }}
+                    />
+                )}
+            </svg>
+            <motion.div
+                className="w-1 h-1 bg-[#00D4AA] rounded-full absolute"
+                animate={{ scale: isHovering ? 0 : 1 }}
+            />
+        </motion.div>
     );
 };
 
 export default function HomePage() {
     const { isAuthenticated } = useAuth();
-    const { scrollY } = useScroll();
-    const heroY = useTransform(scrollY, [0, 500], [0, 150]);
-    const heroOpacity = useTransform(scrollY, [0, 300], [1, 0]);
+
+    // 2. LUSION SCROLL EFFECTS
+    const { scrollY, scrollYProgress } = useScroll();
+
+    // Hero Elements
+    const heroY = useTransform(scrollY, [0, 800], [0, 250]);
+    const heroOpacity = useTransform(scrollY, [0, 400], [1, 0]);
+    const mockupScale = useTransform(scrollY, [0, 500], [1, 1.15]);
+    const mockupRotate = useTransform(scrollYProgress, [0, 0.1], [0, 2]);
+
+    // Massive Background Text Parallax
+    const bgTextX1 = useTransform(scrollY, [0, 1000], [0, -400]);
+    const bgTextX2 = useTransform(scrollY, [0, 1000], [0, 400]);
 
     // Demo state
     const [demoState, setDemoState] = useState('idle'); // idle, scanning, result
@@ -136,7 +218,17 @@ export default function HomePage() {
             <CustomCursor />
 
             {/* HERO SECTION */}
-            <section className="relative w-full min-h-screen flex flex-col items-center justify-start pt-32 lg:pt-40 px-6 overflow-hidden">
+            <section className="relative w-full min-h-screen flex flex-col items-center justify-start pt-32 lg:pt-40 px-6 overflow-hidden perspective-1000">
+                {/* 3. MASSIVE LUSION TYPOGRAPHY BACKGROUND */}
+                <div className="absolute top-[20%] left-0 w-full overflow-hidden pointer-events-none z-0 opacity-[0.03] flex flex-col gap-4">
+                    <motion.div style={{ x: bgTextX1 }} className="whitespace-nowrap text-[18vw] font-black leading-none tracking-tighter">
+                        CLEAN INTELLIGENCE
+                    </motion.div>
+                    <motion.div style={{ x: bgTextX2 }} className="whitespace-nowrap text-[18vw] font-black leading-none tracking-tighter ml-[-20vw]">
+                        MACHINE VISION
+                    </motion.div>
+                </div>
+
                 {/* Background Mesh */}
                 <div className="absolute inset-0 z-0 bg-gradient-mesh opacity-70 animate-gradient-flow pointer-events-none" />
 
@@ -186,11 +278,12 @@ export default function HomePage() {
                     </motion.div>
                 </motion.div>
 
-                {/* Dashboard Mockup */}
+                {/* Dashboard Mockup - Now with 3D scroll rotate */}
                 <motion.div
                     initial={{ opacity: 0, y: 100, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     transition={{ delay: 0.8, type: 'spring', stiffness: 50, damping: 20 }}
+                    style={{ scale: mockupScale, rotateX: mockupRotate, transformPerspective: 1200 }}
                     className="relative z-20 w-full max-w-5xl mx-auto mt-20"
                 >
                     <div className="relative rounded-2xl md:rounded-[32px] overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.15)] border border-white/40 bg-white/20 backdrop-blur-2xl animate-[float_6s_ease-in-out_infinite]">
@@ -238,87 +331,97 @@ export default function HomePage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[300px]">
 
-                        {/* Card 1: Large */}
-                        <div className="md:col-span-2 md:row-span-2 feature-card relative overflow-hidden group p-10 flex flex-col justify-between custom-glass">
-                            <div className="z-10 relative">
-                                <div className="w-14 h-14 bg-hygenious-teal/10 rounded-2xl flex items-center justify-center mb-6">
-                                    <ScanLine className="w-7 h-7 text-hygenious-teal" />
+                        {/* Card 1: Large - Now wrapped in TiltCard */}
+                        <TiltCard className="md:col-span-2 md:row-span-2">
+                            <div className="feature-card h-full w-full relative overflow-hidden group p-10 flex flex-col justify-between custom-glass">
+                                <div className="z-10 relative pointer-events-none">
+                                    <div className="w-14 h-14 bg-hygenious-teal/10 rounded-2xl flex items-center justify-center mb-6">
+                                        <ScanLine className="w-7 h-7 text-hygenious-teal" />
+                                    </div>
+                                    <h3 className="text-3xl font-semibold mb-3 tracking-tight">Instant AI Analysis</h3>
+                                    <p className="text-slate-500 text-lg max-w-sm">Our dual-engine AI scans complex environments in under 3 seconds with 99.2% verified accuracy.</p>
                                 </div>
-                                <h3 className="text-3xl font-semibold mb-3">Instant AI Analysis</h3>
-                                <p className="text-slate-500 text-lg max-w-sm">Our dual-engine AI scans complex environments in under 3 seconds with 99.2% verified accuracy.</p>
-                            </div>
-                            <div className="absolute right-0 bottom-0 w-2/3 h-2/3 translate-x-10 translate-y-10 rounded-tl-2xl overflow-hidden shadow-2xl border-t border-l border-white/50 group-hover:translate-x-8 group-hover:translate-y-8 transition-transform duration-500">
-                                <div className="absolute inset-0 bg-hygenious-teal/10 animate-pulse z-20"></div>
-                                <div className="w-full h-full bg-slate-200">
-                                    {/* Mock Image Content */}
-                                    <div className="absolute inset-0 flex items-center justify-center border-4 border-hygenious-teal/40">
-                                        <div className="border border-hygenious-teal bg-hygenious-teal/20 px-3 py-1 text-hygenious-teal font-bold text-sm absolute top-4 left-4 rounded">98% Match</div>
+                                <div className="absolute right-0 bottom-0 w-2/3 h-2/3 translate-x-10 translate-y-10 rounded-tl-2xl overflow-hidden shadow-2xl border-t border-l border-white/50 group-hover:translate-x-4 group-hover:translate-y-4 transition-transform duration-700 ease-out pointer-events-none">
+                                    <div className="absolute inset-0 bg-hygenious-teal/10 animate-pulse z-20"></div>
+                                    <div className="w-full h-full bg-slate-200">
+                                        {/* Mock Image Content */}
+                                        <div className="absolute inset-0 flex items-center justify-center border-4 border-hygenious-teal/40">
+                                            <div className="border border-hygenious-teal bg-hygenious-teal/20 px-3 py-1 text-hygenious-teal font-bold text-sm absolute top-4 left-4 rounded">98% Match</div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </TiltCard>
 
                         {/* Card 2: Medium */}
-                        <div className="feature-card group p-8 flex flex-col items-center justify-center text-center custom-glass relative overflow-hidden">
-                            <div className="absolute inset-0 bg-gradient-to-br from-hygenious-teal/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                            <div className="relative z-10 w-full flex flex-col items-center">
-                                <Activity className="w-10 h-10 text-hygenious-cyan mb-6" />
-                                <h3 className="text-2xl font-semibold mb-2">Instant Score</h3>
-                                <div className="w-32 h-32 rounded-full border-[8px] border-slate-100 flex items-center justify-center relative mt-6 group-hover:border-hygenious-teal/20 transition-colors">
-                                    <span className="text-5xl font-bold text-slate-900">A</span>
-                                    <svg className="absolute inset-0 w-full h-full -rotate-90">
-                                        <circle cx="50%" cy="50%" r="46%" fill="none" stroke="#00D4AA" strokeWidth="8" strokeDasharray="100 100" className="opacity-0 group-hover:opacity-100 transition-all duration-1000 delay-100 ease-out" strokeDashoffset="0"></circle>
+                        <TiltCard>
+                            <div className="feature-card h-full w-full group p-8 flex flex-col items-center justify-center text-center custom-glass relative overflow-hidden pointer-events-none">
+                                <div className="absolute inset-0 bg-gradient-to-br from-hygenious-teal/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                <div className="relative z-10 w-full flex flex-col items-center">
+                                    <Activity className="w-10 h-10 text-hygenious-cyan mb-6" />
+                                    <h3 className="text-2xl font-semibold mb-2 tracking-tight">Instant Score</h3>
+                                    <div className="w-32 h-32 rounded-full border-[8px] border-slate-100 flex items-center justify-center relative mt-6 group-hover:border-hygenious-teal/20 transition-colors">
+                                        <span className="text-5xl font-bold text-slate-900 group-hover:scale-110 transition-transform">A</span>
+                                        <svg className="absolute inset-0 w-full h-full -rotate-90">
+                                            <circle cx="50%" cy="50%" r="46%" fill="none" stroke="#00D4AA" strokeWidth="8" strokeDasharray="100 100" className="opacity-0 group-hover:opacity-100 transition-all duration-1000 delay-100 ease-out" strokeDashoffset="0"></circle>
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+                        </TiltCard>
+
+                        {/* Card 3: Medium */}
+                        <TiltCard>
+                            <div className="feature-card h-full w-full p-8 flex flex-col custom-glass group pointer-events-none">
+                                <ShieldCheck className="w-8 h-8 text-hygenious-blue mb-6 group-hover:scale-110 transition-transform" />
+                                <h3 className="text-2xl font-semibold mb-2 tracking-tight">Detailed Breakdown</h3>
+                                <p className="text-slate-500 mb-6">Every issue identified with severity and confidence levels.</p>
+                                <div className="space-y-3 w-full mt-auto">
+                                    <div className="bg-white/60 p-3 rounded-lg flex items-center justify-between border border-slate-100 group-hover:-translate-y-1 transition-transform shadow-sm">
+                                        <span className="text-sm font-medium">Surface Cleanliness</span>
+                                        <span className="text-xs font-bold text-red-500 bg-red-50 px-2 py-1 rounded">Critical</span>
+                                    </div>
+                                    <div className="bg-white/60 p-3 rounded-lg flex items-center justify-between border border-slate-100 group-hover:-translate-y-1 transition-transform delay-75 shadow-sm">
+                                        <span className="text-sm font-medium">Organization</span>
+                                        <span className="text-xs font-bold text-hygenious-teal bg-hygenious-teal/10 px-2 py-1 rounded">Perfect</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </TiltCard>
+
+                        {/* Card 4: Small */}
+                        <TiltCard>
+                            <div className="feature-card h-full w-full p-8 flex flex-col justify-center items-center text-center custom-glass group pointer-events-none">
+                                <div className="w-16 h-16 bg-white shadow-sm rounded-xl mb-4 border border-slate-100 flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-all">
+                                    <QrCode className="w-8 h-8 text-slate-800" />
+                                </div>
+                                <h3 className="text-xl font-semibold mb-1 tracking-tight">Public Trust Badges</h3>
+                                <p className="text-slate-500 text-sm">Live verifiable QR certificates.</p>
+                            </div>
+                        </TiltCard>
+
+                        {/* Card 5: Small */}
+                        <TiltCard className="md:col-span-2">
+                            <div className="feature-card h-full w-full p-8 flex flex-col md:flex-row items-center gap-8 custom-glass overflow-hidden group pointer-events-none">
+                                <div className="flex-1">
+                                    <TrendingUp className="w-8 h-8 text-purple-500 mb-4 group-hover:-translate-y-1 transition-transform" />
+                                    <h3 className="text-2xl font-semibold mb-2 tracking-tight">Smart Analytics</h3>
+                                    <p className="text-slate-500">Track your hygiene performance over time and benchmark across locations.</p>
+                                </div>
+                                <div className="w-full md:w-1/2 h-32 bg-gradient-to-r from-hygenious-teal/10 to-hygenious-cyan/10 rounded-xl relative overflow-hidden">
+                                    {/* Simulated chart line */}
+                                    <svg className="absolute w-full h-full" preserveAspectRatio="none" viewBox="0 -10 100 120">
+                                        <path d="M0,80 Q20,60 40,70 T80,40 T100,20" fill="none" stroke="url(#grad)" strokeWidth="4" strokeLinecap="round" className="opacity-70 group-hover:opacity-100 group-hover:scale-y-110 transition-all origin-bottom" />
+                                        <defs>
+                                            <linearGradient id="grad">
+                                                <stop offset="0%" stopColor="#06B6D4" />
+                                                <stop offset="100%" stopColor="#00D4AA" />
+                                            </linearGradient>
+                                        </defs>
                                     </svg>
                                 </div>
                             </div>
-                        </div>
-
-                        {/* Card 3: Medium */}
-                        <div className="feature-card p-8 flex flex-col custom-glass group">
-                            <ShieldCheck className="w-8 h-8 text-hygenious-blue mb-6" />
-                            <h3 className="text-2xl font-semibold mb-2">Detailed Breakdown</h3>
-                            <p className="text-slate-500 mb-6">Every issue identified with severity and confidence levels.</p>
-                            <div className="space-y-3 w-full mt-auto">
-                                <div className="bg-white/60 p-3 rounded-lg flex items-center justify-between border border-slate-100 group-hover:-translate-y-1 transition-transform">
-                                    <span className="text-sm font-medium">Surface Cleanliness</span>
-                                    <span className="text-xs font-bold text-red-500 bg-red-50 px-2 py-1 rounded">Critical</span>
-                                </div>
-                                <div className="bg-white/60 p-3 rounded-lg flex items-center justify-between border border-slate-100 group-hover:-translate-y-1 transition-transform delay-75">
-                                    <span className="text-sm font-medium">Organization</span>
-                                    <span className="text-xs font-bold text-hygenious-teal bg-hygenious-teal/10 px-2 py-1 rounded">Perfect</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Card 4: Small */}
-                        <div className="feature-card p-8 flex flex-col justify-center items-center text-center custom-glass group">
-                            <div className="w-16 h-16 bg-white shadow-sm rounded-xl mb-4 border border-slate-100 flex items-center justify-center group-hover:scale-110 transition-transform">
-                                <QrCode className="w-8 h-8 text-slate-800" />
-                            </div>
-                            <h3 className="text-xl font-semibold mb-1">Public Trust Badges</h3>
-                            <p className="text-slate-500 text-sm">Live verifiable QR certificates.</p>
-                        </div>
-
-                        {/* Card 5: Small */}
-                        <div className="md:col-span-2 feature-card p-8 flex flex-col md:flex-row items-center gap-8 custom-glass overflow-hidden group">
-                            <div className="flex-1">
-                                <TrendingUp className="w-8 h-8 text-purple-500 mb-4" />
-                                <h3 className="text-2xl font-semibold mb-2">Smart Analytics</h3>
-                                <p className="text-slate-500">Track your hygiene performance over time and benchmark across multiple locations effortlessly.</p>
-                            </div>
-                            <div className="w-full md:w-1/2 h-32 bg-gradient-to-r from-hygenious-teal/10 to-hygenious-cyan/10 rounded-xl relative overflow-hidden">
-                                {/* Simulated chart line */}
-                                <svg className="absolute w-full h-full" preserveAspectRatio="none" viewBox="0 0 100 100">
-                                    <path d="M0,80 Q20,60 40,70 T80,40 T100,20" fill="none" stroke="url(#grad)" strokeWidth="4" strokeLinecap="round" className="opacity-70 group-hover:opacity-100 transition-opacity" />
-                                    <defs>
-                                        <linearGradient id="grad">
-                                            <stop offset="0%" stopColor="#06B6D4" />
-                                            <stop offset="100%" stopColor="#00D4AA" />
-                                        </linearGradient>
-                                    </defs>
-                                </svg>
-                            </div>
-                        </div>
+                        </TiltCard>
 
                     </div>
                 </div>
