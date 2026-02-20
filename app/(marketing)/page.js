@@ -163,59 +163,57 @@ const CustomCursor = () => {
     );
 };
 
-const HorizontalScrollGallery = () => {
-    const targetRef = useRef(null);
-    const { scrollYProgress } = useScroll({ target: targetRef, offset: ["start start", "end end"] });
-
-    const x = useTransform(scrollYProgress, [0, 1], ["0%", "-65%"]);
-
-    const y1 = useTransform(scrollYProgress, [0, 1], [0, 200]);
-    const y2 = useTransform(scrollYProgress, [0, 1], [0, -200]);
-
+const AiCapabilitiesSection = () => {
     return (
-        <section ref={targetRef} className="relative h-[300vh] bg-slate-950 text-white overflow-hidden">
-            <motion.div style={{ y: y1 }} className="absolute top-[20%] right-[10%] w-[40vw] h-[40vw] bg-hygenious-teal/10 rounded-full blur-[100px] pointer-events-none" />
-            <motion.div style={{ y: y2 }} className="absolute bottom-[20%] left-[10%] w-[30vw] h-[30vw] bg-hygenious-cyan/10 rounded-full blur-[100px] pointer-events-none" />
+        <section className="relative py-32 bg-slate-950 text-white overflow-hidden">
+            {/* Ambient Lighting */}
+            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-hygenious-teal/10 rounded-full blur-[120px] pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-hygenious-cyan/10 rounded-full blur-[100px] pointer-events-none" />
 
-            <div className="sticky top-0 flex h-screen items-center">
-                <motion.div style={{ x }} className="flex gap-10 md:gap-24 px-10 md:px-32 w-max items-center">
+            <div className="max-w-7xl mx-auto px-6 relative z-10">
 
-                    <div className="flex-shrink-0 w-[85vw] md:w-[50vw] pr-10">
-                        <span className="text-hygenious-teal font-mono uppercase tracking-widest text-sm mb-4 block">Spatial Analysis</span>
-                        <h2 className="text-5xl md:text-[8vw] font-black leading-[0.9] tracking-tighter mix-blend-difference mb-8">
-                            BEYOND<br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-hygenious-teal to-hygenious-cyan">VISION.</span>
-                        </h2>
-                        <p className="text-xl md:text-2xl text-slate-400 font-light max-w-xl">
-                            Move past static checklists. Enter an immersive ecosystem that maps patterns and predicts non-compliance using temporal analytics.
-                        </p>
-                    </div>
+                {/* Intro Panel */}
+                <div className="max-w-3xl mb-20 text-center mx-auto md:text-left md:mx-0">
+                    <span className="inline-flex items-center gap-2 bg-hygenious-teal/10 border border-hygenious-teal/20 text-hygenious-teal font-mono px-4 py-2 rounded-full text-xs uppercase tracking-widest mb-6">
+                        <Camera className="w-4 h-4" /> AI Diagnostics
+                    </span>
+                    <h2 className="text-4xl md:text-6xl font-black leading-[1.05] tracking-tighter mb-6">
+                        HOW THE AI <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-500">SEES IT.</span>
+                    </h2>
+                    <p className="text-lg md:text-xl text-slate-400 font-light leading-relaxed">
+                        The moment you snap a photo, our system shreds the image into physical zones—detecting micro-residue, cross-contamination risks, and protocol violations invisible to the naked eye.
+                    </p>
+                </div>
 
+                {/* Cards Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     {[
-                        { title: "Continuous Watch", desc: "24/7 automated spatial tracking." },
-                        { title: "Surface Mapping", desc: "Detailed breakdown of contamination zones." },
-                        { title: "Predictive Analytics", desc: "Forecast issues before they occur." },
+                        { step: "01", title: "Spatial Mapping", desc: "Recognizes sinks, floors, counters, and high-touch points instantly.", icon: ScanLine, color: "from-hygenious-teal/20 to-transparent" },
+                        { step: "02", title: "Anomaly Detection", desc: "Flags water stains, grease buildup, and improper storage placement.", icon: Activity, color: "from-purple-500/20 to-transparent" },
+                        { step: "03", title: "Risk Scoring", desc: "Cross-references findings against global health code databases.", icon: ShieldCheck, color: "from-hygenious-cyan/20 to-transparent" },
                     ].map((item, idx) => (
-                        <div key={idx} className="flex-shrink-0 w-[75vw] md:w-[35vw] h-[55vh] md:h-[65vh] rounded-[32px] overflow-hidden relative group border border-white/5 bg-slate-900 shadow-2xl perspective-1000">
-                            <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-10 opacity-70 transition-opacity group-hover:opacity-90"></div>
+                        <div key={idx} className="h-[400px] md:h-[500px] rounded-[32px] overflow-hidden relative group border border-white/10 bg-black shadow-2xl flex flex-col justify-end p-8 hover:border-white/20 transition-all duration-500 hover:-translate-y-2">
+                            <div className={`absolute inset-0 bg-gradient-to-b ${item.color} opacity-40 group-hover:opacity-60 transition-opacity`} />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent z-10" />
 
-                            <div className="w-full h-full overflow-hidden">
-                                <img
-                                    src="/images/hero-image.png"
-                                    alt={item.title}
-                                    className="w-full h-full object-cover opacity-60 mix-blend-luminosity group-hover:mix-blend-normal group-hover:scale-110 transition-all duration-[1.5s] ease-out"
-                                />
-                            </div>
+                            <img
+                                src="/images/hero-image.png"
+                                alt={item.title}
+                                className="absolute inset-0 w-full h-full object-cover opacity-30 group-hover:scale-105 group-hover:opacity-40 transition-all duration-700 ease-out filter grayscale mix-blend-screen"
+                            />
 
-                            <div className="absolute bottom-10 left-10 z-20 transform group-hover:-translate-y-4 transition-transform duration-500">
-                                <div className="text-hygenious-teal font-mono text-sm mb-3">0{idx + 1}</div>
-                                <h3 className="text-3xl md:text-4xl font-bold text-white mb-2">{item.title}</h3>
-                                <p className="text-slate-300 text-lg">{item.desc}</p>
+                            <div className="relative z-20">
+                                <div className="flex items-center justify-between mb-4">
+                                    <span className="font-mono text-hygenious-teal font-bold">{item.step} //</span>
+                                    <item.icon className="w-6 h-6 text-white/50" />
+                                </div>
+                                <h3 className="text-2xl md:text-3xl font-bold text-white mb-3 tracking-tight">{item.title}</h3>
+                                <p className="text-slate-300 text-base font-light leading-relaxed">{item.desc}</p>
                             </div>
                         </div>
                     ))}
+                </div>
 
-                    <div className="flex-shrink-0 w-[30vw]"></div>
-                </motion.div>
             </div>
         </section>
     );
@@ -598,8 +596,8 @@ export default function HomePage() {
                 </motion.div>
             </section>
 
-            {/* HORIZONTAL SCROLL LUSION STYLE */}
-            <HorizontalScrollGallery />
+            {/* AI CAPABILITIES SECTION */}
+            <AiCapabilitiesSection />
 
             {/* CTA SECTION */}
             <section className="relative py-32 px-6 overflow-hidden">
