@@ -1,76 +1,90 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { motion, useScroll } from 'framer-motion';
 import { Shield, ArrowRight, LogIn, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function Header() {
     const { isAuthenticated } = useAuth();
+    const { scrollY } = useScroll();
+    const [scrolled, setScrolled] = useState(false);
+
+    useEffect(() => {
+        return scrollY.onChange((latest) => {
+            setScrolled(latest > 10);
+        });
+    }, [scrollY]);
 
     return (
         <motion.nav
             initial={{ y: -100 }}
             animate={{ y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="sticky top-0 z-50 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border-b border-white/20"
+            transition={{ duration: 0.5, ease: [0.34, 1.56, 0.64, 1] }}
+            className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled
+                ? 'bg-white/80 backdrop-blur-[20px] shadow-[0_4px_12px_rgba(0,0,0,0.05)] border-b border-hygenious-teal/10'
+                : 'bg-transparent border-b border-transparent'
+                }`}
         >
-            <div className="container mx-auto px-4 py-4">
-                <div className="flex items-center justify-between">
+            <div className="container mx-auto px-6 h-[60px]">
+                <div className="flex items-center justify-between h-full">
                     <Link href="/">
                         <motion.div
-                            className="flex items-center space-x-2 cursor-pointer"
-                            whileHover={{ scale: 1.03 }}
-                            transition={{ duration: 0.3 }}
+                            className="flex items-center space-x-2 cursor-pointer group"
+                            whileHover={{ scale: 1.02 }}
                         >
-                            <Shield className="h-8 w-8 text-blue-600" />
-                            <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
+                            <Shield className="h-6 w-6 text-hygenious-teal transition-transform group-hover:scale-110 duration-300" />
+                            <span className="text-xl font-bold tracking-tight text-slate-900">
                                 Hygenious
                             </span>
                         </motion.div>
                     </Link>
 
-                    <div className="hidden md:flex items-center space-x-6">
-                        <Link href="/features" className="text-gray-600 hover:text-blue-600 transition-colors">
-                            Features
-                        </Link>
-                        <Link href="/how-it-works" className="text-gray-600 hover:text-blue-600 transition-colors">
-                            How It Works
-                        </Link>
-                        <Link href="/dashboard/upgrade" className="text-gray-600 hover:text-blue-600 transition-colors">
-                            Pricing
-                        </Link>
-                        <Link href="/benefits" className="text-gray-600 hover:text-blue-600 transition-colors">
-                            Benefits
-                        </Link>
+                    <div className="hidden md:flex items-center space-x-8">
+                        {[
+                            { name: 'Features', href: '/features' },
+                            { name: 'How It Works', href: '/how-it-works' },
+                            { name: 'Pricing', href: '/dashboard/upgrade' },
+                            { name: 'Benefits', href: '/benefits' }
+                        ].map((item) => (
+                            <Link
+                                key={item.name}
+                                href={item.href}
+                                className="text-[15px] font-medium text-slate-600 hover:text-slate-900 transition-colors relative group"
+                            >
+                                {item.name}
+                                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-hygenious-teal transition-all duration-300 group-hover:w-full opacity-0 group-hover:opacity-100 rounded-full"></span>
+                            </Link>
+                        ))}
+                    </div>
 
+                    <div className="hidden md:flex items-center space-x-4">
                         {isAuthenticated ? (
                             <>
                                 <Link href="/dashboard">
-                                    <Button variant="outline" className="hover:scale-105 transition-transform">
+                                    <span className="text-[15px] font-medium text-slate-600 hover:text-slate-900 transition-colors mr-4">
                                         Dashboard
-                                    </Button>
+                                    </span>
                                 </Link>
                                 <Link href="/dashboard/audits/new">
-                                    <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 hover:scale-105 transition-transform">
-                                        Get Started <ArrowRight className="ml-2 h-4 w-4" />
-                                    </Button>
+                                    <button className="bg-gradient-to-r from-hygenious-teal to-hygenious-cyan text-white text-[15px] font-semibold px-6 py-2 rounded-full shadow-[0_8px_24px_rgba(0,212,170,0.3)] hover:shadow-[0_16px_40px_rgba(0,212,170,0.4)] hover:-translate-y-0.5 transition-all duration-300 active:scale-95 flex items-center">
+                                        Scan Now <ArrowRight className="ml-2 w-4 h-4" />
+                                    </button>
                                 </Link>
                             </>
                         ) : (
                             <>
                                 <Link href="/login">
-                                    <Button variant="outline" className="hover:scale-105 transition-transform">
-                                        <LogIn className="mr-2 h-4 w-4" />
-                                        Login
-                                    </Button>
+                                    <span className="text-[15px] font-medium text-slate-600 hover:text-slate-900 transition-colors mr-2">
+                                        Sign In
+                                    </span>
                                 </Link>
                                 <Link href="/register">
-                                    <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 hover:scale-105 transition-transform">
-                                        <UserPlus className="mr-2 h-4 w-4" />
-                                        Sign Up
-                                    </Button>
+                                    <button className="bg-gradient-to-r from-hygenious-teal to-hygenious-cyan text-white text-[15px] font-semibold px-6 py-2 rounded-full shadow-[0_8px_24px_rgba(0,212,170,0.3)] hover:shadow-[0_16px_40px_rgba(0,212,170,0.4)] hover:-translate-y-0.5 transition-all duration-300 active:scale-95 flex items-center">
+                                        Start Free Trial
+                                    </button>
                                 </Link>
                             </>
                         )}

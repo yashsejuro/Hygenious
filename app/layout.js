@@ -8,6 +8,9 @@ export const metadata = {
   title: 'Hygenious - AI-Powered Cleanliness Inspection',
   description:
     'Transform any smartphone into an instant, unbiased hygiene auditor with AI-powered analysis',
+  icons: {
+    icon: '/icon.png',
+  },
 };
 
 export default function RootLayout({ children }) {

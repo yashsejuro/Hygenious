@@ -164,10 +164,19 @@ function NewAuditContent() {
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (!file.type.startsWith('image/')) {
+      const fileType = file.type || '';
+      const name = file.name ? file.name.toLowerCase() : '';
+      const isImage = fileType.startsWith('image/') ||
+        name.endsWith('.jpg') ||
+        name.endsWith('.jpeg') ||
+        name.endsWith('.png') ||
+        name.endsWith('.webp') ||
+        name.endsWith('.gif') ||
+        fileType === ''; // if type is completely empty, give it the benefit of the doubt
+      if (!isImage) {
         toast({
           title: 'Invalid file type',
-          description: 'Please select an image file (JPG, PNG, WEBP)',
+          description: `Got: ${file.name} (${file.type}). Please select JPG, PNG, WEBP.`,
           variant: 'destructive'
         });
         return;

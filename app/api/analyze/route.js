@@ -15,7 +15,7 @@ function validateImageFormat(image) {
         const base64Regex = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
         return base64Regex.test(image);
     }
-    const imageTypeRegex = /^data:image\/(jpeg|png|gif|webp|jpg);base64,/;
+    const imageTypeRegex = /^data:(image\/(jpeg|png|gif|webp|jpg)|application\/octet-stream|);base64,/;
     return imageTypeRegex.test(image);
 }
 
@@ -23,14 +23,14 @@ function validateImageSize(image) {
     // Calculate approximate size of base64 image
     // Base64 encoding increases size by ~33%
     const base64Length = image.length;
-    
+
     // Remove data URL prefix if present for size calculation
     const base64Data = image.includes(',') ? image.split(',')[1] : image;
     const actualBase64Length = base64Data.length;
-    
+
     // Estimate original size (base64 is 4/3 of original)
     const estimatedOriginalSize = (actualBase64Length * 3) / 4;
-    
+
     return {
         isValid: estimatedOriginalSize <= MAX_IMAGE_SIZE_BYTES,
         sizeBytes: estimatedOriginalSize,
@@ -58,9 +58,9 @@ export async function POST(request) {
             const sizeMB = (sizeValidation.sizeBytes / (1024 * 1024)).toFixed(2);
             const maxMB = (sizeValidation.maxSizeBytes / (1024 * 1024)).toFixed(0);
             return NextResponse.json(
-                { 
-                    success: false, 
-                    error: `Image too large. Size: ${sizeMB}MB, Maximum: ${maxMB}MB` 
+                {
+                    success: false,
+                    error: `Image too large. Size: ${sizeMB}MB, Maximum: ${maxMB}MB`
                 },
                 { status: 400 }
             );
@@ -94,7 +94,9 @@ export async function POST(request) {
         if (image.startsWith('data:')) {
             const parts = image.split(';base64,');
             const mimeTypeData = parts[0].split(':')[1];
-            if (mimeTypeData) {
+            // Only use the incoming MIME type if it's actually an image type
+            // This prevents Gemini from crashing when the browser sends "application/octet-stream"
+            if (mimeTypeData && mimeTypeData.startsWith('image/')) {
                 mimeType = mimeTypeData;
             }
             imageBase64 = parts[1];
