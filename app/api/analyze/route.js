@@ -111,6 +111,14 @@ export async function POST(request) {
         // AI Analysis
         const analysisResult = await analyzeHygieneImage(imageBase64, mimeType);
 
+        if (analysisResult.isAppropriate === false) {
+            console.log('❌ Inappropriate image detected:', analysisResult.assessment);
+            return NextResponse.json(
+                { success: false, error: analysisResult.assessment || 'Inappropriate or irrelevant image detected. Please upload a valid hygiene/safety image.' },
+                { status: 400 }
+            );
+        }
+
         console.log('✅ Analysis complete');
         console.log('Overall Score:', analysisResult.overallScore);
 
